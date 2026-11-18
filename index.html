@@ -1,3 +1,8 @@
+Here is the final, polished code. I have updated the Results view to include a sleek **Tabbed Interface** for the review section, separated cleanly into **Correct**, **Incorrect**, and **Unattempted**. I've also added an "Explanation" box to each review card so candidates can see the detailed breakdown.
+
+The mobile bottom-pinned action bar and custom modals remain fully intact, ensuring a 100% Google Sites-friendly and mobile-friendly experience.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,7 +109,7 @@
     .modal-actions { display: flex; justify-content: center; gap: 15px; margin-top: 25px; }
     
     /* Results View */
-    .results-container { max-width: 800px; margin: auto; padding: 40px 20px; text-align: center; overflow-y: auto; width: 100%; }
+    .results-container { max-width: 900px; margin: auto; padding: 40px 20px; text-align: center; overflow-y: auto; width: 100%; }
     .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 30px 0; }
     .stat-box { background: #2a2a2a; padding: 20px; border-radius: 8px; border-bottom: 4px solid #666; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .stat-box.st-score { border-color: var(--primary-cyan); grid-column: span 2; }
@@ -113,8 +118,19 @@
     .stat-box h3 { font-size: 2.5rem; margin-bottom: 5px; }
     .stat-box.st-score h3 { font-size: 3.5rem; color: var(--primary-cyan); }
     
-    /* Detailed Review */
-    .review-list { text-align: left; margin-top: 30px; display: none; }
+    /* Tabbed Review Section */
+    #detailed-review-section { display: none; margin-top: 40px; }
+    .review-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+    .tab-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 12px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; flex: 1; min-width: 110px; text-align: center; transition: 0.2s; }
+    .tab-btn:hover { background: #333; }
+    .tab-btn.active { color: #fff; border-bottom: 3px solid; }
+    .tab-btn[data-tab="correct"].active { border-color: var(--color-answered); background: rgba(76, 175, 80, 0.1); }
+    .tab-btn[data-tab="wrong"].active { border-color: var(--color-not-answered); background: rgba(244, 67, 54, 0.1); }
+    .tab-btn[data-tab="unattempted"].active { border-color: var(--color-not-visited); background: rgba(158, 158, 158, 0.1); }
+    
+    .tab-content { display: none; text-align: left; }
+    .tab-content.active { display: block; }
+    
     .review-item { padding: 20px; background: #2a2a2a; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid var(--border-color); }
     .review-item.correct { border-left-color: var(--color-answered); }
     .review-item.wrong { border-left-color: var(--color-not-answered); }
@@ -124,6 +140,8 @@
     .tag-correct { background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #4caf50; }
     .tag-wrong { background: rgba(244, 67, 54, 0.2); color: #e57373; border: 1px solid #f44336; }
     .tag-unattempted { background: rgba(158, 158, 158, 0.2); color: #e0e0e0; border: 1px solid #9e9e9e; }
+    
+    .explanation-box { margin-top: 12px; padding: 12px; background: #1e1e1e; border-radius: 5px; border-left: 3px solid var(--primary-cyan); font-size: 0.95rem; line-height: 1.5; color: #ddd; }
 
     /* MOBILE SPECIFIC OVERRIDES */
     @media (max-width: 768px) {
@@ -134,7 +152,6 @@
         .result-grid { grid-template-columns: 1fr; }
         .stat-box.st-score { grid-column: span 1; }
         
-        /* Force action buttons into a grid anchored to the bottom */
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -268,72 +285,84 @@
         
         <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 25px;">Unattempted Questions: <strong id="res-unattempted" style="color: #fff;">0</strong></p>
         
-        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;" id="post-exam-actions">
             <button class="btn btn-save" onclick="showDetailedReview()">View Detailed Review</button>
             <button class="btn btn-prev" onclick="location.reload()">Restart Quiz</button>
         </div>
         
-        <div class="review-list" id="review-list">
-            <!-- Review items injected here -->
+        <!-- 3-Section Tabbed Review -->
+        <div id="detailed-review-section">
+            <h2 style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Test Review</h2>
+            
+            <div class="review-tabs">
+                <button class="tab-btn" data-tab="correct" onclick="switchTab('correct')">Correct (<span id="tab-count-correct">0</span>)</button>
+                <button class="tab-btn" data-tab="wrong" onclick="switchTab('wrong')">Incorrect (<span id="tab-count-wrong">0</span>)</button>
+                <button class="tab-btn" data-tab="unattempted" onclick="switchTab('unattempted')">Unattempted (<span id="tab-count-unattempted">0</span>)</button>
+            </div>
+            
+            <div id="review-content-correct" class="tab-content"></div>
+            <div id="review-content-wrong" class="tab-content"></div>
+            <div id="review-content-unattempted" class="tab-content"></div>
         </div>
+        
     </div>
 </div>
 
 <script>
 // Base Data containing 50 questions
 const baseQuizData = [
-    {qE: "Glaw Lake, recently designated as a Ramsar site, is located in which state?", qT: "சமீபத்தில் ராம்சர் தளமாக அறிவிக்கப்பட்ட க்ளா ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Assam", "Sikkim", "Arunachal Pradesh", "Nagaland"], oT: ["அசாம்", "சிக்கிம்", "அருணாச்சல பிரதேசம்", "நாகாலாந்து"], a: 2},
-    {qE: "Shekha Jheel Bird Sanctuary Is Located In Which State?", qT: "ஷேகா ஜீல் பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Bihar", "Rajasthan", "Uttar Pradesh"], oT: ["தமிழ்நாடு", "பீகார்", "ராஜஸ்தான்", "உத்தரபிரதேசம்"], a: 3},
-    {qE: "Chhari-Dhand Wetland is located in which state?", qT: "சாரி-தந்த் ஈரநிலம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Assam", "Kerala", "Odisha"], oT: ["குஜராத்", "அசாம்", "கேரளா", "ஒடிசா"], a: 0},
-    {qE: "Kopra Jalashay Is Located In Which State?", qT: "கோப்ரா நீர்த்தேக்கம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Chhattisgarh", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["சத்தீஸ்கர்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 0},
-    {qE: "Gokul Jalashay is located in which state?", qT: "கோகுல் நீர்த்தேக்கம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Uttar Pradesh", "Bihar", "Jharkhand", "West Bengal"], oT: ["உத்தரபிரதேசம்", "பீகார்", "ஜார்க்கண்ட்", "மேற்கு வங்காளம்"], a: 1},
-    {qE: "When Is World Environment Day Observed Every year?", qT: "ஒவ்வொரு ஆண்டும் உலக சுற்றுச்சூழல் தினம் எப்போது அனுசரிக்கப்படுகிறது?", oE: ["5th June", "6th June", "4th June", "7th June"], oT: ["ஜூன் 5", "ஜூன் 6", "ஜூன் 4", "ஜூன் 7"], a: 0},
-    {qE: "India's First AI-Powered Bird Sanctuary Is Being Developed In Which State?", qT: "இந்தியாவின் முதல் AI-ஆதரவு பறவைகள் சரணாலயம் எந்த மாநிலத்தில் உருவாக்கப்படுகிறது?", oE: ["Gujarat", "Maharashtra", "Karnataka", "Kerala"], oT: ["குஜராத்", "மகாராஷ்டிரா", "கர்நாடகா", "கேரளா"], a: 1},
-    {qE: "What Is The Name Of India's First Hydrogen-Powered Train?", qT: "இந்தியாவின் முதல் ஹைட்ரஜன் ரயிலின் பெயர் என்ன?", oE: ["NaMo Green Rail", "Vande Bharat Green", "Hydrogen Express", "Amrit Green Rail"], oT: ["நமோ கிரீன் ரயில்", "வந்தே பாரத் கிரீன்", "ஹைட்ரஜன் எக்ஸ்பிரஸ்", "அம்ரித் கிரீன் ரயில்"], a: 0},
-    {qE: "Borjuli Biodiversity Heritage Site Is Located In Which State?", qT: "போர்ஜுலி பல்லுயிர் பாரம்பரிய தளம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Arunachal Pradesh", "Assam", "Meghalaya", "West Bengal"], oT: ["அருணாச்சல பிரதேசம்", "அசாம்", "மேகாலயா", "மேற்கு வங்காளம்"], a: 1},
-    {qE: "India's First Commercial-Scale Coal-to-Ammonium Nitrate Project Is Being Set Up In Which State?", qT: "இந்தியாவின் முதல் வணிக ரீதியான நிலக்கரியில் இருந்து அம்மோனியம் நைட்ரேட் திட்டம் எந்த மாநிலத்தில் அமைக்கப்படுகிறது?", oE: ["Jharkhand", "Chhattisgarh", "Odisha", "Madhya Pradesh"], oT: ["ஜார்க்கண்ட்", "சத்தீஸ்கர்", "ஒடிசா", "மத்திய பிரதேசம்"], a: 2},
-    {qE: "E85 Fuel Contains Approximately How Much Ethanol?", qT: "E85 எரிபொருளில் தோராயமாக எவ்வளவு எத்தனால் உள்ளது?", oE: ["20%", "50%", "80-85%", "100%"], oT: ["20%", "50%", "80-85%", "100%"], a: 2},
-    {qE: "Which District Has Been Declared India's First Pearl Farming Cluster?", qT: "இந்தியாவின் முதல் முத்து வளர்ப்பு கிளஸ்டராக அறிவிக்கப்பட்ட மாவட்டம் எது?", oE: ["Patna", "Hazaribag", "Pilibhit", "Raipur"], oT: ["பாட்னா", "ஹசாரிபாக்", "பிலிபித்", "ராய்ப்பூர்"], a: 1},
-    {qE: "India's First Satellite-Tagged Ganges Soft-Shell Turtle Was Released In Which National Park?", qT: "இந்தியாவின் முதல் செயற்கைக்கோள் குறியிடப்பட்ட கங்கை மென்மையான ஓடு ஆமை எந்த தேசிய பூங்காவில் விடுவிக்கப்பட்டது?", oE: ["Jim Corbett National Park", "Kaziranga National Park", "Ranthambore National Park", "Bandipur National Park"], oT: ["ஜிம் கார்பெட் தேசிய பூங்கா", "காசிரங்கா தேசிய பூங்கா", "ரந்தம்பூர் தேசிய பூங்கா", "பந்திப்பூர் தேசிய பூங்கா"], a: 1},
-    {qE: "Jai Prakash Narayan Bird Sanctuary Is Located In Which State?", qT: "ஜெய் பிரகாஷ் நாராயண் பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Bihar", "Uttar Pradesh", "Rajasthan"], oT: ["தமிழ்நாடு", "பீகார்", "உத்தரபிரதேசம்", "ராஜஸ்தான்"], a: 2},
-    {qE: "Osbeckia zubeengargiana, New Plant Species Has Been Discovered In Which National Park?", qT: "ஒஸ்பெகியா ஜூபின்கார்கியானா என்ற புதிய தாவர இனம் எந்த தேசிய பூங்காவில் கண்டுபிடிக்கப்பட்டுள்ளது?", oE: ["Kaziranga", "Jim Corbett", "Manas", "Sundarbans"], oT: ["காசிரங்கா", "ஜிம் கார்பெட்", "மனாஸ்", "சுந்தரவனக் காடுகள்"], a: 2},
-    {qE: "Shongtong-Karchham Hydroelectric Project Is Located On Which River?", qT: "ஷோங்டாங்-கர்ச்சாம் நீர்மின் திட்டம் எந்த நதியில் அமைந்துள்ளது?", oE: ["Beas", "Chenab", "Ravi", "Sutlej"], oT: ["பியாஸ்", "சீனாப்", "ரவி", "சட்லெஜ்"], a: 3},
-    {qE: "Musi River Rejuvenation Project Is Launched In Which State?", qT: "மூசி நதி சீரமைப்பு திட்டம் எந்த மாநிலத்தில் தொடங்கப்பட்டுள்ளது?", oE: ["Karnataka", "Maharashtra", "Andhra Pradesh", "Telangana"], oT: ["கர்நாடகா", "மகாராஷ்டிரா", "ஆந்திர பிரதேசம்", "தெலுங்கானா"], a: 3},
-    {qE: "Which African Country Supplied 9 Cheetahs To India Under Project Cheetah On 28th Feb 2026?", qT: "பிப்ரவரி 28, 2026 அன்று ப்ராஜெக்ட் சீட்டா திட்டத்தின் கீழ் எந்த ஆப்பிரிக்க நாடு 9 சிறுத்தைகளை இந்தியாவுக்கு வழங்கியது?", oE: ["Botswana", "Uganda", "Mali", "Kenya"], oT: ["போட்ஸ்வானா", "உகாண்டா", "மாலி", "கென்யா"], a: 0},
-    {qE: "Patna Bird Sanctuary Is Located In Which State?", qT: "பாட்னா பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Uttar Pradesh", "Bihar", "Rajasthan", "Madhya Pradesh"], oT: ["உத்தரபிரதேசம்", "பீகார்", "ராஜஸ்தான்", "மத்திய பிரதேசம்"], a: 0},
-    {qE: "The Kalai-II Hydropower Project Is Planned On Which River?", qT: "கலை-II நீர்மின் திட்டம் எந்த நதியில் திட்டமிடப்பட்டுள்ளது?", oE: ["Ganga", "Lohit", "Yamuna", "Tapti"], oT: ["கங்கை", "லோஹித்", "யமுனா", "தப்தி"], a: 1},
-    {qE: "Which Wildlife Sanctuary Has Been Declared Kerala's First Butterfly Sanctuary?", qT: "கேரளாவின் முதல் பட்டாம்பூச்சி சரணாலயமாக எந்த வனவிலங்கு சரணாலயம் அறிவிக்கப்பட்டுள்ளது?", oE: ["Wayanad", "Periyar", "Aralam", "Silent Valley"], oT: ["வயநாடு", "பெரியார்", "ஆராளம்", "சைலண்ட் வேலி"], a: 2},
-    {qE: "World's Largest Green Ammonia Project Is Being Developed In Which State?", qT: "உலகின் மிகப்பெரிய பசுமை அம்மோனியா திட்டம் எந்த மாநிலத்தில் உருவாக்கப்படுகிறது?", oE: ["Gujarat", "Maharashtra", "Andhra Pradesh", "Karnataka"], oT: ["குஜராத்", "மகாராஷ்டிரா", "ஆந்திர பிரதேசம்", "கர்நாடகா"], a: 2},
-    {qE: "Keyi Panyor District, Became India's First Bio-Happy District, Is Located In Which State?", qT: "இந்தியாவின் முதல் பயோ-ஹேப்பி மாவட்டமாக மாறிய கெயி பன்யோர் மாவட்டம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Assam", "Arunachal Pradesh", "Meghalaya", "Nagaland"], oT: ["அசாம்", "அருணாச்சல பிரதேசம்", "மேகாலயா", "நாகாலாந்து"], a: 1},
-    {qE: "Kumbhalgarh Wildlife Sanctuary, Recently Declared An Eco-Sensitive Zone, Is Located In Which State?", qT: "சமீபத்தில் சுற்றுச்சூழல் உணர்திறன் மண்டலமாக அறிவிக்கப்பட்ட கும்பல்கர் வனவிலங்கு சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Rajasthan", "Madhya Pradesh", "Uttar Pradesh"], oT: ["குஜராத்", "ராஜஸ்தான்", "மத்திய பிரதேசம்", "உத்தரபிரதேசம்"], a: 1},
-    {qE: "Which State Has The Highest Renewable Energy Capacity In India?", qT: "இந்தியாவில் அதிக புதுப்பிக்கத்தக்க ஆற்றல் திறன் கொண்ட மாநிலம் எது?", oE: ["Rajasthan", "Tamil Nadu", "Gujarat", "Maharashtra"], oT: ["ராஜஸ்தான்", "தமிழ்நாடு", "குஜராத்", "மகாராஷ்டிரா"], a: 2},
-    {qE: "Which Country Was Hit By Cyclone Gezani In 2026?", qT: "2026 இல் கெசானி புயலால் தாக்கப்பட்ட நாடு எது?", oE: ["Mozambique", "Madagascar", "Indonesia", "Philippines"], oT: ["மொசாம்பிக்", "மடகாஸ்கர்", "இந்தோனேசியா", "பிலிப்பைன்ஸ்"], a: 1},
-    {qE: "Siliserh Lake is located in which state?", qT: "சிலிசெர் ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Chhattisgarh", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["சத்தீஸ்கர்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 3},
-    {qE: "Ramgarh Vishdhari Tiger Reserve Is Located In Which State?", qT: "ராம்கர் விஷ்தாரி புலிகள் காப்பகம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Madhya Pradesh", "Rajasthan", "Uttarakhand", "Tamil Nadu"], oT: ["மத்திய பிரதேசம்", "ராஜஸ்தான்", "உத்தரகாண்ட்", "தமிழ்நாடு"], a: 1},
-    {qE: "Which State Became A Tiger State After 33 Years As Declared By NTCA?", qT: "NTCA அறிவித்தபடி 33 ஆண்டுகளுக்குப் பிறகு புலிகள் மாநிலமாக மாறிய மாநிலம் எது?", oE: ["Madhya Pradesh", "Rajasthan", "Gujarat", "Maharashtra"], oT: ["மத்திய பிரதேசம்", "ராஜஸ்தான்", "குஜராத்", "மகாராஷ்டிரா"], a: 2},
-    {qE: "Who Won The 2025 UNEP Champions Of The Earth Award?", qT: "2025 UNEP சாம்பியன்ஸ் ஆஃப் தி எர்த் விருதை வென்றவர் யார்?", oE: ["Madhav Gadgil", "Vandana Shiva", "Sunita Narain", "Supriya Sahu"], oT: ["மாதவ் காட்கில்", "வந்தனா சிவா", "சுனிதா நரேன்", "சுப்ரியா சாஹு"], a: 3},
-    {qE: "Which Country Named Cyclone Ditwah?", qT: "திட்வா புயலுக்கு பெயரிட்ட நாடு எது?", oE: ["Oman", "Iran", "Saudi Arabia", "Yemen"], oT: ["ஓமன்", "ஈரான்", "சவுதி அரேபியா", "ஏமன்"], a: 3},
-    {qE: "Saranda Forest Is Located In Which State?", qT: "சரண்டா காடு எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Tripura", "Gujarat", "Jharkhand"], oT: ["தமிழ்நாடு", "திரிபுரா", "குஜராத்", "ஜார்க்கண்ட்"], a: 3},
-    {qE: "Which Volcano Recently Erupted After 12,000 Years?", qT: "12,000 ஆண்டுகளுக்குப் பிறகு சமீபத்தில் வெடித்த எரிமலை எது?", oE: ["Popocatépetl", "Hayli Gubbi", "Kilauea", "Mount Etna"], oT: ["போபோகாடெபெட்ல்", "ஹெய்லி குப்பி", "கிலாவியா", "எட்னா மலை"], a: 1},
-    {qE: "Parvati-Arga Bird Sanctuary Of Which State Declared Eco-Sensitive Zone?", qT: "எந்த மாநிலத்தின் பார்வதி-ஆர்கா பறவைகள் சரணாலயம் சுற்றுச்சூழல் உணர்திறன் மண்டலமாக அறிவிக்கப்பட்டது?", oE: ["Uttarakhand", "Bihar", "Gujarat", "Uttar Pradesh"], oT: ["உத்தரகாண்ட்", "பீகார்", "குஜராத்", "உத்தரபிரதேசம்"], a: 3},
-    {qE: "Gogabeel Lake Is Located In Which State?", qT: "கோகாபீல் ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Bihar", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["பீகார்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 0},
-    {qE: "Which Country Became The 90th Member Of IUCN?", qT: "IUCN இன் 90வது உறுப்பு நாடாக மாறிய நாடு எது?", oE: ["Fiji", "Tuvalu", "Vanuatu", "Kiribati"], oT: ["பிஜி", "துவாலு", "வனுவாட்டு", "கிரிபாட்டி"], a: 1},
-    {qE: "In Which State Is India's First Dugong Conservation Reserve Located?", qT: "இந்தியாவின் முதல் டுகோங் பாதுகாப்பு இருப்பு எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Kerala", "Andhra Pradesh", "Tamil Nadu"], oT: ["குஜராத்", "கேரளா", "ஆந்திர பிரதேசம்", "தமிழ்நாடு"], a: 3},
-    {qE: "In Which District Was Rajasthan's First Namo Biodiversity Park Inaugurated?", qT: "ராஜஸ்தானின் முதல் நமோ பல்லுயிர் பூங்கா எந்த மாவட்டத்தில் திறக்கப்பட்டது?", oE: ["Jaipur", "Alwar", "Jodhpur", "Udaipur"], oT: ["ஜெய்ப்பூர்", "ஆல்வார்", "ஜோத்பூர்", "உதய்பூர்"], a: 1},
-    {qE: "Which Country Launched Southeast Asia's 1st Coral Larvae Cryobank?", qT: "தென்கிழக்கு ஆசியாவின் 1வது பவள லார்வா கிரையோபேங்கை அறிமுகப்படுத்திய நாடு எது?", oE: ["Indonesia", "Philippines", "Malaysia", "Thailand"], oT: ["இந்தோனேசியா", "பிலிப்பைன்ஸ்", "மலேசியா", "தாய்லாந்து"], a: 1},
-    {qE: "India Ranks Which Position Globally In Total Forest Area?", qT: "மொத்த வனப்பரப்பில் உலகளவில் இந்தியா எத்தனையாவது இடத்தில் உள்ளது?", oE: ["7th", "9th", "11th", "13th"], oT: ["7வது", "9வது", "11வது", "13வது"], a: 1},
-    {qE: "Shrivardhan Beach Is Located In Which State?", qT: "ஸ்ரீவர்தன் கடற்கரை எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Odisha", "Maharashtra", "Kerala"], oT: ["குஜராத்", "ஒடிசா", "மகாராஷ்டிரா", "கேரளா"], a: 2},
-    {qE: "Which State's Cold Desert Biosphere Reserve Was Recently Added To UNESCO's World Network?", qT: "எந்த மாநிலத்தின் குளிர் பாலைவன உயிர்க்கோள இருப்பு சமீபத்தில் யுனெஸ்கோவின் உலக நெட்வொர்க்கில் சேர்க்கப்பட்டது?", oE: ["Uttarakhand", "Himachal Pradesh", "Sikkim", "Arunachal Pradesh"], oT: ["உத்தரகாண்ட்", "இமாச்சல பிரதேசம்", "சிக்கிம்", "அருணாச்சல பிரதேசம்"], a: 1},
-    {qE: "When Is 'World Ozone Day' Celebrated Every Year?", qT: "ஒவ்வொரு ஆண்டும் 'உலக ஓசோன் தினம்' எப்போது கொண்டாடப்படுகிறது?", oE: ["15 Sept", "16 Sept", "14 Sept", "12 Sept"], oT: ["செப் 15", "செப் 16", "செப் 14", "செப் 12"], a: 1},
-    {qE: "Which Region Has India Obtained Exclusive Rights To Explore For Polymetallic Sulphides?", qT: "பாலிமெட்டாலிக் சல்பைடுகளை ஆராய்வதற்கான பிரத்யேக உரிமையை இந்தியா எந்தப் பகுதியில் பெற்றுள்ளது?", oE: ["Carlsberg Ridge", "Mid-Atlantic Ridge", "Afar Triple Junction", "Mariana Trench"], oT: ["கார்ல்ஸ்பெர்க் ரிட்ஜ்", "மத்திய அட்லாண்டிக் ரிட்ஜ்", "அஃபார் ட்ரிபிள் ஜங்ஷன்", "மரியானா அகழி"], a: 0},
-    {qE: "Which Ministry Launched India's First National Policy On Geothermal Energy In 2025?", qT: "2025 ஆம் ஆண்டில் புவிவெப்ப ஆற்றல் குறித்த இந்தியாவின் முதல் தேசியக் கொள்கையை எந்த அமைச்சகம் வெளியிட்டது?", oE: ["Environment, Forest & Climate Change", "Earth Sciences", "New and Renewable Energy", "Power"], oT: ["சுற்றுச்சூழல், காடு மற்றும் காலநிலை மாற்றம்", "புவி அறிவியல்", "புதிய மற்றும் புதுப்பிக்கத்தக்க ஆற்றல்", "மின்சாரம்"], a: 2},
+    {qE: "Glaw Lake, recently designated as a Ramsar site, is located in which state?", qT: "சமீபத்தில் ராம்சர் தளமாக அறிவிக்கப்பட்ட க்ளா ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Assam", "Sikkim", "Arunachal Pradesh", "Nagaland"], oT: ["அசாம்", "சிக்கிம்", "அருணாச்சல பிரதேசம்", "நாகாலாந்து"], a: 2, exp: "Glaw Lake is located in the Kamlang Tiger Reserve & Wildlife Sanctuary, Lohit District, and is Arunachal Pradesh's 1st Ramsar site."},
+    {qE: "Shekha Jheel Bird Sanctuary Is Located In Which State?", qT: "ஷேகா ஜீல் பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Bihar", "Rajasthan", "Uttar Pradesh"], oT: ["தமிழ்நாடு", "பீகார்", "ராஜஸ்தான்", "உத்தரபிரதேசம்"], a: 3, exp: "Shekha Jheel Bird Sanctuary is located in Aligarh, Uttar Pradesh. It is India's 99th Ramsar Site."},
+    {qE: "Chhari-Dhand Wetland is located in which state?", qT: "சாரி-தந்த் ஈரநிலம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Assam", "Kerala", "Odisha"], oT: ["குஜராத்", "அசாம்", "கேரளா", "ஒடிசா"], a: 0, exp: "Chhari-Dhand Wetland is located in the Kutch district of Gujarat."},
+    {qE: "Kopra Jalashay Is Located In Which State?", qT: "கோப்ரா நீர்த்தேக்கம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Chhattisgarh", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["சத்தீஸ்கர்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 0, exp: "Kopra Jalashay is located in the Bilaspur District and is the first Ramsar Site of Chhattisgarh."},
+    {qE: "Gokul Jalashay is located in which state?", qT: "கோகுல் நீர்த்தேக்கம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Uttar Pradesh", "Bihar", "Jharkhand", "West Bengal"], oT: ["உத்தரபிரதேசம்", "பீகார்", "ஜார்க்கண்ட்", "மேற்கு வங்காளம்"], a: 1, exp: "Gokul Jalashay is an oxbow lake located in Buxar, Bihar."},
+    {qE: "When Is World Environment Day Observed Every year?", qT: "ஒவ்வொரு ஆண்டும் உலக சுற்றுச்சூழல் தினம் எப்போது அனுசரிக்கப்படுகிறது?", oE: ["5th June", "6th June", "4th June", "7th June"], oT: ["ஜூன் 5", "ஜூன் 6", "ஜூன் 4", "ஜூன் 7"], a: 0, exp: "World Environment Day is observed on 5th June. The 2026 theme is 'Inspired by Nature: For Climate. For Our Future.'"},
+    {qE: "India's First AI-Powered Bird Sanctuary Is Being Developed In Which State?", qT: "இந்தியாவின் முதல் AI-ஆதரவு பறவைகள் சரணாலயம் எந்த மாநிலத்தில் உருவாக்கப்படுகிறது?", oE: ["Gujarat", "Maharashtra", "Karnataka", "Kerala"], oT: ["குஜராத்", "மகாராஷ்டிரா", "கர்நாடகா", "கேரளா"], a: 1, exp: "It is being developed at the Thane Creek Flamingo Sanctuary (TCFS) near Mumbai, Maharashtra at a cost of 45Cr."},
+    {qE: "What Is The Name Of India's First Hydrogen-Powered Train?", qT: "இந்தியாவின் முதல் ஹைட்ரஜன் ரயிலின் பெயர் என்ன?", oE: ["NaMo Green Rail", "Vande Bharat Green", "Hydrogen Express", "Amrit Green Rail"], oT: ["நமோ கிரீன் ரயில்", "வந்தே பாரத் கிரீன்", "ஹைட்ரஜன் எக்ஸ்பிரஸ்", "அம்ரித் கிரீன் ரயில்"], a: 0, exp: "NaMo Green Rail is India's 1st hydrogen-powered train. The route is Jind-Sonipat (Haryana)."},
+    {qE: "Borjuli Biodiversity Heritage Site Is Located In Which State?", qT: "போர்ஜுலி பல்லுயிர் பாரம்பரிய தளம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Arunachal Pradesh", "Assam", "Meghalaya", "West Bengal"], oT: ["அருணாச்சல பிரதேசம்", "அசாம்", "மேகாலயா", "மேற்கு வங்காளம்"], a: 1, exp: "Borjuli Wetland is located in the Sonitpur District of Assam and was declared for conserving wild rice (Oryza rufipogon)."},
+    {qE: "India's First Commercial-Scale Coal-to-Ammonium Nitrate Project Is Being Set Up In Which State?", qT: "இந்தியாவின் முதல் வணிக ரீதியான நிலக்கரியில் இருந்து அம்மோனியம் நைட்ரேட் திட்டம் எந்த மாநிலத்தில் அமைக்கப்படுகிறது?", oE: ["Jharkhand", "Chhattisgarh", "Odisha", "Madhya Pradesh"], oT: ["ஜார்க்கண்ட்", "சத்தீஸ்கர்", "ஒடிசா", "மத்திய பிரதேசம்"], a: 2, exp: "It is being set up in Lakhanpur, Jharsuguda District, Odisha by Bharat Coal Gasification & Chemicals Ltd."},
+    {qE: "E85 Fuel Contains Approximately How Much Ethanol?", qT: "E85 எரிபொருளில் தோராயமாக எவ்வளவு எத்தனால் உள்ளது?", oE: ["20%", "50%", "80-85%", "100%"], oT: ["20%", "50%", "80-85%", "100%"], a: 2, exp: "E85 fuel contains 80-85% Ethanol (C2H5OH) and 14-19% Petrol. It is designed for Flex-Fuel Vehicles."},
+    {qE: "Which District Has Been Declared India's First Pearl Farming Cluster?", qT: "இந்தியாவின் முதல் முத்து வளர்ப்பு கிளஸ்டராக அறிவிக்கப்பட்ட மாவட்டம் எது?", oE: ["Patna", "Hazaribag", "Pilibhit", "Raipur"], oT: ["பாட்னா", "ஹசாரிபாக்", "பிலிபித்", "ராய்ப்பூர்"], a: 1, exp: "Hazaribag (Jharkhand) was developed under the Pradhan Mantri Matsya Sampada Yojana (PMMSY)."},
+    {qE: "India's First Satellite-Tagged Ganges Soft-Shell Turtle Was Released In Which National Park?", qT: "இந்தியாவின் முதல் செயற்கைக்கோள் குறியிடப்பட்ட கங்கை மென்மையான ஓடு ஆமை எந்த தேசிய பூங்காவில் விடுவிக்கப்பட்டது?", oE: ["Jim Corbett National Park", "Kaziranga National Park", "Ranthambore National Park", "Bandipur National Park"], oT: ["ஜிம் கார்பெட் தேசிய பூங்கா", "காசிரங்கா தேசிய பூங்கா", "ரந்தம்பூர் தேசிய பூங்கா", "பந்திப்பூர் தேசிய பூங்கா"], a: 1, exp: "The Nilssonia Gangetica (Ganges soft-shell turtle), an endangered species under WPA 1972 Schedule I, was released in Kaziranga NP."},
+    {qE: "Jai Prakash Narayan Bird Sanctuary Is Located In Which State?", qT: "ஜெய் பிரகாஷ் நாராயண் பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Bihar", "Uttar Pradesh", "Rajasthan"], oT: ["தமிழ்நாடு", "பீகார்", "உத்தரபிரதேசம்", "ராஜஸ்தான்"], a: 2, exp: "Located in Ballia District, Uttar Pradesh. Also known as Surha Tal, it became India's 100th Ramsar Site."},
+    {qE: "Osbeckia zubeengargiana, New Plant Species Has Been Discovered In Which National Park?", qT: "ஒஸ்பெகியா ஜூபின்கார்கியானா என்ற புதிய தாவர இனம் எந்த தேசிய பூங்காவில் கண்டுபிடிக்கப்பட்டுள்ளது?", oE: ["Kaziranga", "Jim Corbett", "Manas", "Sundarbans"], oT: ["காசிரங்கா", "ஜிம் கார்பெட்", "மனாஸ்", "சுந்தரவனக் காடுகள்"], a: 2, exp: "Discovered in Manas National Park (Assam) and named after the Assamese singer Zubeen Garg."},
+    {qE: "Shongtong-Karchham Hydroelectric Project Is Located On Which River?", qT: "ஷோங்டாங்-கர்ச்சாம் நீர்மின் திட்டம் எந்த நதியில் அமைந்துள்ளது?", oE: ["Beas", "Chenab", "Ravi", "Sutlej"], oT: ["பியாஸ்", "சீனாப்", "ரவி", "சட்லெஜ்"], a: 3, exp: "Located on the Sutlej River in the Kinnaur district, Himachal Pradesh, with a project capacity of 450 MW."},
+    {qE: "Musi River Rejuvenation Project Is Launched In Which State?", qT: "மூசி நதி சீரமைப்பு திட்டம் எந்த மாநிலத்தில் தொடங்கப்பட்டுள்ளது?", oE: ["Karnataka", "Maharashtra", "Andhra Pradesh", "Telangana"], oT: ["கர்நாடகா", "மகாராஷ்டிரா", "ஆந்திர பிரதேசம்", "தெலுங்கானா"], a: 3, exp: "It is a flagship initiative of the Telangana Government aimed at cleaning and restoring the Musi River in Hyderabad."},
+    {qE: "Which African Country Supplied 9 Cheetahs To India Under Project Cheetah On 28th Feb 2026?", qT: "பிப்ரவரி 28, 2026 அன்று ப்ராஜெக்ட் சீட்டா திட்டத்தின் கீழ் எந்த ஆப்பிரிக்க நாடு 9 சிறுத்தைகளை இந்தியாவுக்கு வழங்கியது?", oE: ["Botswana", "Uganda", "Mali", "Kenya"], oT: ["போட்ஸ்வானா", "உகாண்டா", "மாலி", "கென்யா"], a: 0, exp: "India received 9 more cheetahs from Botswana to be introduced into the Kuno National Park (MP)."},
+    {qE: "Patna Bird Sanctuary Is Located In Which State?", qT: "பாட்னா பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Uttar Pradesh", "Bihar", "Rajasthan", "Madhya Pradesh"], oT: ["உத்தரபிரதேசம்", "பீகார்", "ராஜஸ்தான்", "மத்திய பிரதேசம்"], a: 0, exp: "Patna Bird Sanctuary is located in the Etah district of Uttar Pradesh and was recently declared a Ramsar Site."},
+    {qE: "The Kalai-II Hydropower Project Is Planned On Which River?", qT: "கலை-II நீர்மின் திட்டம் எந்த நதியில் திட்டமிடப்பட்டுள்ளது?", oE: ["Ganga", "Lohit", "Yamuna", "Tapti"], oT: ["கங்கை", "லோஹித்", "யமுனா", "தப்தி"], a: 1, exp: "Located in the Anjaw District of Arunachal Pradesh on the Lohit River, a tributary of the Brahmaputra."},
+    {qE: "Which Wildlife Sanctuary Has Been Declared Kerala's First Butterfly Sanctuary?", qT: "கேரளாவின் முதல் பட்டாம்பூச்சி சரணாலயமாக எந்த வனவிலங்கு சரணாலயம் அறிவிக்கப்பட்டுள்ளது?", oE: ["Wayanad", "Periyar", "Aralam", "Silent Valley"], oT: ["வயநாடு", "பெரியார்", "ஆராளம்", "சைலண்ட் வேலி"], a: 2, exp: "Aralam Wildlife Sanctuary in Kannur district, Kerala, was renamed as Aralam Butterfly Sanctuary."},
+    {qE: "World's Largest Green Ammonia Project Is Being Developed In Which State?", qT: "உலகின் மிகப்பெரிய பசுமை அம்மோனியா திட்டம் எந்த மாநிலத்தில் உருவாக்கப்படுகிறது?", oE: ["Gujarat", "Maharashtra", "Andhra Pradesh", "Karnataka"], oT: ["குஜராத்", "மகாராஷ்டிரா", "ஆந்திர பிரதேசம்", "கர்நாடகா"], a: 2, exp: "Being developed in Kakinada, Andhra Pradesh by AM Green with a $10 billion investment."},
+    {qE: "Keyi Panyor District, Became India's First Bio-Happy District, Is Located In Which State?", qT: "இந்தியாவின் முதல் பயோ-ஹேப்பி மாவட்டமாக மாறிய கெயி பன்யோர் மாவட்டம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Assam", "Arunachal Pradesh", "Meghalaya", "Nagaland"], oT: ["அசாம்", "அருணாச்சல பிரதேசம்", "மேகாலயா", "நாகாலாந்து"], a: 1, exp: "Located in Arunachal Pradesh. 'Bio-Happiness' (Happy people + Healthy nature) is a term coined by Dr. M.S. Swaminathan."},
+    {qE: "Kumbhalgarh Wildlife Sanctuary, Recently Declared An Eco-Sensitive Zone, Is Located In Which State?", qT: "சமீபத்தில் சுற்றுச்சூழல் உணர்திறன் மண்டலமாக அறிவிக்கப்பட்ட கும்பல்கர் வனவிலங்கு சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Rajasthan", "Madhya Pradesh", "Uttar Pradesh"], oT: ["குஜராத்", "ராஜஸ்தான்", "மத்திய பிரதேசம்", "உத்தரபிரதேசம்"], a: 1, exp: "Located in the Aravalli Range, Rajasthan. Eco-Sensitive Zones are declared under the Environment (Protection) Act, 1986."},
+    {qE: "Which State Has The Highest Renewable Energy Capacity In India?", qT: "இந்தியாவில் அதிக புதுப்பிக்கத்தக்க ஆற்றல் திறன் கொண்ட மாநிலம் எது?", oE: ["Rajasthan", "Tamil Nadu", "Gujarat", "Maharashtra"], oT: ["ராஜஸ்தான்", "தமிழ்நாடு", "குஜராத்", "மகாராஷ்டிரா"], a: 2, exp: "Gujarat became the top renewable energy state with a total RE Capacity of 42.5 GW (16.5%)."},
+    {qE: "Which Country Was Hit By Cyclone Gezani In 2026?", qT: "2026 இல் கெசானி புயலால் தாக்கப்பட்ட நாடு எது?", oE: ["Mozambique", "Madagascar", "Indonesia", "Philippines"], oT: ["மொசாம்பிக்", "மடகாஸ்கர்", "இந்தோனேசியா", "பிலிப்பைன்ஸ்"], a: 1, exp: "Cyclone Gezani hit Madagascar in 2026."},
+    {qE: "Siliserh Lake is located in which state?", qT: "சிலிசெர் ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Chhattisgarh", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["சத்தீஸ்கர்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 3, exp: "Siliserh Lake is a human-made freshwater lake located in the Alwar district of Rajasthan."},
+    {qE: "Ramgarh Vishdhari Tiger Reserve Is Located In Which State?", qT: "ராம்கர் விஷ்தாரி புலிகள் காப்பகம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Madhya Pradesh", "Rajasthan", "Uttarakhand", "Tamil Nadu"], oT: ["மத்திய பிரதேசம்", "ராஜஸ்தான்", "உத்தரகாண்ட்", "தமிழ்நாடு"], a: 1, exp: "Located in Rajasthan. It recently saw India's 2nd inter-state tiger relocation from Pench Tiger Reserve (MP)."},
+    {qE: "Which State Became A Tiger State After 33 Years As Declared By NTCA?", qT: "NTCA அறிவித்தபடி 33 ஆண்டுகளுக்குப் பிறகு புலிகள் மாநிலமாக மாறிய மாநிலம் எது?", oE: ["Madhya Pradesh", "Rajasthan", "Gujarat", "Maharashtra"], oT: ["மத்திய பிரதேசம்", "ராஜஸ்தான்", "குஜராத்", "மகாராஷ்டிரா"], a: 2, exp: "Gujarat became a tiger state after a tiger was confirmed in the Ratanmahal Wildlife Sanctuary in Dahod District."},
+    {qE: "Who Won The 2025 UNEP Champions Of The Earth Award?", qT: "2025 UNEP சாம்பியன்ஸ் ஆஃப் தி எர்த் விருதை வென்றவர் யார்?", oE: ["Madhav Gadgil", "Vandana Shiva", "Sunita Narain", "Supriya Sahu"], oT: ["மாதவ் காட்கில்", "வந்தனா சிவா", "சுனிதா நரேன்", "சுப்ரியா சாஹு"], a: 3, exp: "Supriya Sahu, the Additional Chief Secretary of Tamil Nadu, won the award in 2025."},
+    {qE: "Which Country Named Cyclone Ditwah?", qT: "திட்வா புயலுக்கு பெயரிட்ட நாடு எது?", oE: ["Oman", "Iran", "Saudi Arabia", "Yemen"], oT: ["ஓமன்", "ஈரான்", "சவுதி அரேபியா", "ஏமன்"], a: 3, exp: "Yemen named Cyclone Ditwah, which recently hit Sri Lanka and Southern India."},
+    {qE: "Saranda Forest Is Located In Which State?", qT: "சரண்டா காடு எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Tripura", "Gujarat", "Jharkhand"], oT: ["தமிழ்நாடு", "திரிபுரா", "குஜராத்", "ஜார்க்கண்ட்"], a: 3, exp: "Located near Jamshedpur, Jharkhand. It is Asia's Largest Sal Forest, and the SC ordered it to be declared a Wildlife Sanctuary."},
+    {qE: "Which Volcano Recently Erupted After 12,000 Years?", qT: "12,000 ஆண்டுகளுக்குப் பிறகு சமீபத்தில் வெடித்த எரிமலை எது?", oE: ["Popocatépetl", "Hayli Gubbi", "Kilauea", "Mount Etna"], oT: ["போபோகாடெபெட்ல்", "ஹெய்லி குப்பி", "கிலாவியா", "எட்னா மலை"], a: 1, exp: "Hayli Gubbi, located in the Afar region of Ethiopia, erupted after 12,000 years. The ash reached India via Gujarat."},
+    {qE: "Parvati-Arga Bird Sanctuary Of Which State Declared Eco-Sensitive Zone?", qT: "எந்த மாநிலத்தின் பார்வதி-ஆர்கா பறவைகள் சரணாலயம் சுற்றுச்சூழல் உணர்திறன் மண்டலமாக அறிவிக்கப்பட்டது?", oE: ["Uttarakhand", "Bihar", "Gujarat", "Uttar Pradesh"], oT: ["உத்தரகாண்ட்", "பீகார்", "குஜராத்", "உத்தரபிரதேசம்"], a: 3, exp: "Located in Gonda district, Uttar Pradesh."},
+    {qE: "Gogabeel Lake Is Located In Which State?", qT: "கோகாபீல் ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Bihar", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["பீகார்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 0, exp: "Gogabeel Lake (Oxbow Lake) is located in Manihari, Katihar, Bihar. It is India's 94th Ramsar Site."},
+    {qE: "Which Country Became The 90th Member Of IUCN?", qT: "IUCN இன் 90வது உறுப்பு நாடாக மாறிய நாடு எது?", oE: ["Fiji", "Tuvalu", "Vanuatu", "Kiribati"], oT: ["பிஜி", "துவாலு", "வனுவாட்டு", "கிரிபாட்டி"], a: 1, exp: "Tuvalu, one of the world's most climate-vulnerable nations with its capital at Vaiaku, became the 90th member."},
+    {qE: "In Which State Is India's First Dugong Conservation Reserve Located?", qT: "இந்தியாவின் முதல் டுகோங் பாதுகாப்பு இருப்பு எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Kerala", "Andhra Pradesh", "Tamil Nadu"], oT: ["குஜராத்", "கேரளா", "ஆந்திர பிரதேசம்", "தமிழ்நாடு"], a: 3, exp: "Located in Palk Bay, Tamil Nadu. Dugongs are marine mammals commonly known as Sea Cows."},
+    {qE: "In Which District Was Rajasthan's First Namo Biodiversity Park Inaugurated?", qT: "ராஜஸ்தானின் முதல் நமோ பல்லுயிர் பூங்கா எந்த மாவட்டத்தில் திறக்கப்பட்டது?", oE: ["Jaipur", "Alwar", "Jodhpur", "Udaipur"], oT: ["ஜெய்ப்பூர்", "ஆல்வார்", "ஜோத்பூர்", "உதய்பூர்"], a: 1, exp: "Inaugurated at Pratap Bandh, Alwar, Rajasthan, and named 'NAMO VAN'."},
+    {qE: "Which Country Launched Southeast Asia's 1st Coral Larvae Cryobank?", qT: "தென்கிழக்கு ஆசியாவின் 1வது பவள லார்வா கிரையோபேங்கை அறிமுகப்படுத்திய நாடு எது?", oE: ["Indonesia", "Philippines", "Malaysia", "Thailand"], oT: ["இந்தோனேசியா", "பிலிப்பைன்ஸ்", "மலேசியா", "தாய்லாந்து"], a: 1, exp: "Launched by the Philippines. The cryobank freezes and stores baby coral to restore damaged reefs later."},
+    {qE: "India Ranks Which Position Globally In Total Forest Area?", qT: "மொத்த வனப்பரப்பில் உலகளவில் இந்தியா எத்தனையாவது இடத்தில் உள்ளது?", oE: ["7th", "9th", "11th", "13th"], oT: ["7வது", "9வது", "11வது", "13வது"], a: 1, exp: "According to GFRA 2025, India ranks 9th globally with a Total Forest Area of 72.7 M Hectares."},
+    {qE: "Shrivardhan Beach Is Located In Which State?", qT: "ஸ்ரீவர்தன் கடற்கரை எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Odisha", "Maharashtra", "Kerala"], oT: ["குஜராத்", "ஒடிசா", "மகாராஷ்டிரா", "கேரளா"], a: 2, exp: "Located in Maharashtra. It is one of the 5 beaches from the state that recently received 'Blue Flag' Certification."},
+    {qE: "Which State's Cold Desert Biosphere Reserve Was Recently Added To UNESCO's World Network?", qT: "எந்த மாநிலத்தின் குளிர் பாலைவன உயிர்க்கோள இருப்பு சமீபத்தில் யுனெஸ்கோவின் உலக நெட்வொர்க்கில் சேர்க்கப்பட்டது?", oE: ["Uttarakhand", "Himachal Pradesh", "Sikkim", "Arunachal Pradesh"], oT: ["உத்தரகாண்ட்", "இமாச்சல பிரதேசம்", "சிக்கிம்", "அருணாச்சல பிரதேசம்"], a: 1, exp: "Located in Lahaul & Spiti District, Himachal Pradesh. It integrates Pin Valley NP, Kibber WS, and Chandratal Wetland."},
+    {qE: "When Is 'World Ozone Day' Celebrated Every Year?", qT: "ஒவ்வொரு ஆண்டும் 'உலக ஓசோன் தினம்' எப்போது கொண்டாடப்படுகிறது?", oE: ["15 Sept", "16 Sept", "14 Sept", "12 Sept"], oT: ["செப் 15", "செப் 16", "செப் 14", "செப் 12"], a: 1, exp: "Celebrated on 16 September. The 2025 theme was 'From Science to Global Action'."},
+    {qE: "Which Region Has India Obtained Exclusive Rights To Explore For Polymetallic Sulphides?", qT: "பாலிமெட்டாலிக் சல்பைடுகளை ஆராய்வதற்கான பிரத்யேக உரிமையை இந்தியா எந்தப் பகுதியில் பெற்றுள்ளது?", oE: ["Carlsberg Ridge", "Mid-Atlantic Ridge", "Afar Triple Junction", "Mariana Trench"], oT: ["கார்ல்ஸ்பெர்க் ரிட்ஜ்", "மத்திய அட்லாண்டிக் ரிட்ஜ்", "அஃபார் ட்ரிபிள் ஜங்ஷன்", "மரியானா அகழி"], a: 0, exp: "Carlsberg Ridge, located in the Indian Ocean between the African and Indo-Australian plates. India signed an agreement with the ISA."},
+    {qE: "Which Ministry Launched India's First National Policy On Geothermal Energy In 2025?", qT: "2025 ஆம் ஆண்டில் புவிவெப்ப ஆற்றல் குறித்த இந்தியாவின் முதல் தேசியக் கொள்கையை எந்த அமைச்சகம் வெளியிட்டது?", oE: ["Environment, Forest & Climate Change", "Earth Sciences", "New and Renewable Energy", "Power"], oT: ["சுற்றுச்சூழல், காடு மற்றும் காலநிலை மாற்றம்", "புவி அறிவியல்", "புதிய மற்றும் புதுப்பிக்கத்தக்க ஆற்றல்", "மின்சாரம்"], a: 2, exp: "Launched by the Ministry of New and Renewable Energy to accelerate the clean energy transition towards NET ZERO by 2070."},
     
     // Statement Type Questions
-    {qE: "Consider the following statements:\n1. Mukhi is India's first India-born adult cheetah at Kuno National Park.\n2. The Global Biofuel Alliance headquarters will be set up in Brazil.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. முகி என்பது குனோ தேசிய பூங்காவில் பிறந்த இந்தியாவின் முதல் வயது வந்த சிறுத்தை ஆகும்.\n2. உலகளாவிய உயிரி எரிபொருள் கூட்டணியின் தலைமையகம் பிரேசிலில் அமைக்கப்படும்.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 0},
-    {qE: "Consider the following statements:\n1. Indore and Udaipur are the first two Indian cities recognized as Wetland Cities.\n2. The Ken-Betwa river linking project transfers water from the Betwa river to the Ken river.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. இந்தூர் மற்றும் உதய்பூர் ஆகியவை சதுப்புநில நகரங்களாக அங்கீகரிக்கப்பட்ட முதல் இரண்டு இந்திய நகரங்கள்.\n2. கென்-பெட்வா நதி இணைப்புத் திட்டம் பெட்வா நதியிலிருந்து கென் நதிக்கு தண்ணீரை மாற்றுகிறது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 0},
-    {qE: "Consider the following statements:\n1. India is the world's largest emitter of Nitrous Oxide.\n2. The Bald Eagle was recently declared America's National Bird.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. நைட்ரஸ் ஆக்சைடை உலகில் அதிக அளவில் வெளியேற்றும் நாடு இந்தியா.\n2. வழுக்கை கழுகு (Bald Eagle) சமீபத்தில் அமெரிக்காவின் தேசிய பறவையாக அறிவிக்கப்பட்டது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 1},
-    {qE: "Consider the following statements:\n1. Kaziranga Tiger Reserve achieved the 3rd highest tiger density globally.\n2. Durgesh Aranya Zoological Park achieved India's 1st IGBC Certification.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. காசிரங்கா புலிகள் காப்பகம் உலகளவில் 3வது அதிக புலிகள் அடர்த்தியை அடைந்துள்ளது.\n2. துர்கேஷ் ஆரண்ய விலங்கியல் பூங்கா இந்தியாவின் 1 வது IGBC சான்றிதழைப் பெற்றுள்ளது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 2},
-    {qE: "Consider the following statements:\n1. Guru Ghasidas-Tamor Pingla Tiger Reserve is India's 5th largest tiger reserve.\n2. The Banded Royal butterfly was recently discovered in Kerala.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. குரு காசிதாஸ்-தமோர் பிங்லா புலிகள் காப்பகம் இந்தியாவின் 5வது பெரிய புலிகள் காப்பகமாகும்.\n2. பேண்டட் ராயல் பட்டாம்பூச்சி சமீபத்தில் கேரளாவில் கண்டுபிடிக்கப்பட்டது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 3}
+    {qE: "Consider the following statements:\n1. Mukhi is India's first India-born adult cheetah at Kuno National Park.\n2. The Global Biofuel Alliance headquarters will be set up in Brazil.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. முகி என்பது குனோ தேசிய பூங்காவில் பிறந்த இந்தியாவின் முதல் வயது வந்த சிறுத்தை ஆகும்.\n2. உலகளாவிய உயிரி எரிபொருள் கூட்டணியின் தலைமையகம் பிரேசிலில் அமைக்கப்படும்.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 0, exp: "Statement 1 is correct (Mukhi was born to Namibian cheetah Jwala). Statement 2 is incorrect as the Global Biofuel Alliance HQ is being set up in India, not Brazil."},
+    {qE: "Consider the following statements:\n1. Indore and Udaipur are the first two Indian cities recognized as Wetland Cities.\n2. The Ken-Betwa river linking project transfers water from the Betwa river to the Ken river.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. இந்தூர் மற்றும் உதய்பூர் ஆகியவை சதுப்புநில நகரங்களாக அங்கீகரிக்கப்பட்ட முதல் இரண்டு இந்திய நகரங்கள்.\n2. கென்-பெட்வா நதி இணைப்புத் திட்டம் பெட்வா நதியிலிருந்து கென் நதிக்கு தண்ணீரை மாற்றுகிறது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 0, exp: "Statement 1 is correct (Recognized under the Ramsar Convention). Statement 2 is incorrect because the project transfers water from the Ken River to the Betwa River (not the other way around)."},
+    {qE: "Consider the following statements:\n1. India is the world's largest emitter of Nitrous Oxide.\n2. The Bald Eagle was recently declared America's National Bird.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. நைட்ரஸ் ஆக்சைடை உலகில் அதிக அளவில் வெளியேற்றும் நாடு இந்தியா.\n2. வழுக்கை கழுகு (Bald Eagle) சமீபத்தில் அமெரிக்காவின் தேசிய பறவையாக அறிவிக்கப்பட்டது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 1, exp: "Statement 1 is incorrect (China is the largest emitter at 16%, India is second at 11%). Statement 2 is correct."},
+    {qE: "Consider the following statements:\n1. Kaziranga Tiger Reserve achieved the 3rd highest tiger density globally.\n2. Durgesh Aranya Zoological Park achieved India's 1st IGBC Certification.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. காசிரங்கா புலிகள் காப்பகம் உலகளவில் 3வது அதிக புலிகள் அடர்த்தியை அடைந்துள்ளது.\n2. துர்கேஷ் ஆரண்ய விலங்கியல் பூங்கா இந்தியாவின் 1 வது IGBC சான்றிதழைப் பெற்றுள்ளது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 2, exp: "Both statements are factually correct based on recent 2024-2025 environmental updates."},
+    {qE: "Consider the following statements:\n1. Guru Ghasidas-Tamor Pingla Tiger Reserve is India's 5th largest tiger reserve.\n2. The Banded Royal butterfly was recently discovered in Kerala.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. குரு காசிதாஸ்-தமோர் பிங்லா புலிகள் காப்பகம் இந்தியாவின் 5வது பெரிய புலிகள் காப்பகமாகும்.\n2. பேண்டட் ராயல் பட்டாம்பூச்சி சமீபத்தில் கேரளாவில் கண்டுபிடிக்கப்பட்டது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 3, exp: "Both statements are incorrect. Guru Ghasidas is India's 3rd largest tiger reserve (in Chhattisgarh). The Banded Royal butterfly was recently discovered in Tripura (Sepahijala Wildlife Sanctuary)."}
 ];
 
 let quizData = [];
@@ -534,8 +563,12 @@ function submitExam() {
     switchView('view-results');
 }
 
+// Detailed Review with Tabs
 function showDetailedReview() {
-    let reviewHtml = '';
+    let htmlCorrect = '';
+    let htmlWrong = '';
+    let htmlUnattempted = '';
+    
     quizData.forEach((q, i) => {
         let isAttempted = answers[i] !== null;
         let isCorrect = isAttempted && answers[i] === q.a;
@@ -546,26 +579,62 @@ function showDetailedReview() {
         
         let qText = q.qE.replace(/\n/g, "<br>");
         let tagHtml = !isAttempted ? `<span class="answer-tag tag-unattempted">Unattempted</span>` : 
-                      isCorrect ? `<span class="answer-tag tag-correct">Correct</span>` : 
+                      isCorrect ? `<span class="answer-tag tag-correct">Correct (+1.0)</span>` : 
                       `<span class="answer-tag tag-wrong">Incorrect (-0.33)</span>`;
+                      
+        let explanationText = q.exp || `The correct answer is ${correctText}.`;
         
-        reviewHtml += `
+        let itemHtml = `
             <div class="review-item ${cssClass}">
-                <strong>Q${i+1}: ${qText}</strong><br>
+                <strong style="font-size: 1.1rem; color: #fff;">Q${i+1}: ${qText}</strong><br>
                 ${tagHtml}
                 <div style="margin-top: 15px; font-size: 0.95rem; display: grid; gap: 8px;">
                     <div><span style="color: var(--text-secondary)">Your Answer:</span> <span style="color: ${!isAttempted ? '#9e9e9e' : isCorrect ? 'var(--color-answered)' : 'var(--color-not-answered)'}">${chosenText}</span></div>
                     <div><span style="color: var(--text-secondary)">Correct Answer:</span> <span style="color: var(--color-answered); font-weight: bold;">${correctText}</span></div>
                 </div>
+                <div class="explanation-box">
+                    <strong style="color: var(--primary-cyan);">Explanation:</strong><br>
+                    ${explanationText}
+                </div>
             </div>
         `;
+        
+        if (!isAttempted) htmlUnattempted += itemHtml;
+        else if (isCorrect) htmlCorrect += itemHtml;
+        else htmlWrong += itemHtml;
     });
-    document.getElementById('review-list').innerHTML = reviewHtml;
-    document.getElementById('review-list').style.display = 'block';
     
-    // Hide the review button itself so they don't click it twice
-    event.target.style.display = 'none';
+    // Inject Content
+    document.getElementById('review-content-correct').innerHTML = htmlCorrect || "<div style='text-align:center; padding: 30px; color: var(--text-secondary);'>No correct answers recorded in this session.</div>";
+    document.getElementById('review-content-wrong').innerHTML = htmlWrong || "<div style='text-align:center; padding: 30px; color: var(--color-answered); font-weight: bold;'>Amazing job! You had no incorrect answers!</div>";
+    document.getElementById('review-content-unattempted').innerHTML = htmlUnattempted || "<div style='text-align:center; padding: 30px; color: var(--text-secondary);'>You attempted every single question. Great effort!</div>";
+    
+    // Setup Tab counts
+    document.getElementById('tab-count-correct').innerText = document.getElementById('res-correct').innerText;
+    document.getElementById('tab-count-wrong').innerText = document.getElementById('res-wrong').innerText;
+    document.getElementById('tab-count-unattempted').innerText = document.getElementById('res-unattempted').innerText;
+    
+    // Display Section
+    document.getElementById('post-exam-actions').style.display = 'none';
+    document.getElementById('detailed-review-section').style.display = 'block';
+    
+    // Default to the first tab that has data
+    if (htmlWrong) switchTab('wrong');
+    else if (htmlCorrect) switchTab('correct');
+    else switchTab('unattempted');
+}
+
+function switchTab(tabId) {
+    // Reset buttons and content visibility
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Activate chosen tab
+    document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(`review-content-${tabId}`).classList.add('active');
 }
 </script>
 </body>
 </html>
+
+```
