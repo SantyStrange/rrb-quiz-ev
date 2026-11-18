@@ -3,622 +3,530 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RRB Style Bilingual WebQuiz - State & National News</title>
+<title>RRB CBT - Environment Current Affairs</title>
 <style>
     :root {
-        --bg-dark: #121212;
-        --bg-panel: #1e1e1e;
-        --text-main: #ffffff;
-        --text-muted: #b3b3b3;
-        --purple-main: #8a2be2;
-        --purple-hover: #9b4dff;
-        --purple-dark: #4b0082;
-        --green-answered: #2e7d32;
-        --red-unanswered: #c62828;
-        --gray-unvisited: #757575;
+        --bg-color: #121212;
+        --surface-color: #1e1e1e;
+        --primary-cyan: #00e5ff;
+        --primary-blue: #2979ff;
+        --text-primary: #ffffff;
+        --text-secondary: #b3b3b3;
+        --border-color: #333333;
+        
+        --color-not-visited: #9e9e9e;
+        --color-not-answered: #f44336;
+        --color-answered: #4caf50;
+        --color-marked: #9c27b0;
     }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-primary); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
     
-    /* Google Sites friendly body handling (prevents double scrollbars in iframes) */
-    html, body { height: 100%; width: 100%; }
-    body { background-color: var(--bg-dark); color: var(--text-main); line-height: 1.6; display: flex; flex-direction: column; overflow-x: hidden; }
+    /* Views */
+    .view { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+    .view.active { display: flex; }
     
-    .hidden { display: none !important; }
-    
+    /* Landing Page */
+    .landing-container { max-width: 800px; margin: auto; padding: 40px 20px; text-align: center; overflow-y: auto; }
+    .landing-container h1 { color: var(--primary-cyan); font-size: 2rem; margin-bottom: 20px; }
+    .instructions { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 25px; text-align: left; margin-bottom: 30px; line-height: 1.6; }
+    .instructions h3 { color: var(--primary-cyan); margin-bottom: 15px; }
+    .instructions ul { margin-left: 20px; }
+    .start-btn { background: var(--primary-blue); color: #fff; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+    .start-btn:hover { background: #1565c0; transform: scale(1.05); }
+
     /* Header */
-    header { background-color: var(--purple-dark); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--purple-main); z-index: 100; flex-shrink: 0; }
-    .timer { font-size: 1.2rem; font-weight: bold; background: var(--bg-dark); padding: 5px 15px; border-radius: 5px; border: 1px solid var(--purple-main); }
+    .header { background-color: var(--surface-color); border-bottom: 2px solid var(--primary-cyan); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .header h1 { font-size: 1.2rem; font-weight: 600; color: var(--primary-cyan); }
+    .timer-container { font-size: 1.2rem; font-weight: bold; background: #2a2a2a; padding: 5px 15px; border-radius: 5px; border: 1px solid var(--primary-blue); }
     
-    /* Layout */
-    .container { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
-    .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
-    .sidebar { width: 300px; background-color: var(--bg-panel); border-left: 2px solid var(--purple-dark); display: flex; flex-direction: column; overflow-y: auto; }
+    /* Main Layout */
+    .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
     
-    /* Start Screen */
-    #start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; padding: 20px; }
-    #start-screen h1 { color: var(--purple-main); margin-bottom: 20px; font-size: 1.8rem; }
-    .btn { background-color: var(--purple-main); color: white; border: none; padding: 10px 20px; font-size: 1rem; cursor: pointer; border-radius: 5px; margin: 5px; transition: 0.3s; }
-    .btn:hover { background-color: var(--purple-hover); }
+    /* Question Section */
+    .question-section { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+    .q-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem; color: var(--primary-cyan); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+    .question-text { font-size: 1.1rem; line-height: 1.6; margin-bottom: 15px; }
+    .question-tamil { font-size: 1.1rem; line-height: 1.6; color: var(--primary-cyan); margin-bottom: 25px; }
     
-    /* Quiz Area */
-    #quiz-container { display: flex; flex-direction: column; flex: 1; height: 100%; }
-    .question-box { background: var(--bg-panel); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
-    .question-text { font-size: 1.1rem; margin-bottom: 20px; }
-    .options-group { display: flex; flex-direction: column; gap: 10px; }
-    .option-label { display: flex; align-items: center; padding: 10px; background: #2a2a2a; border-radius: 5px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
-    .option-label:hover { border-color: var(--purple-main); }
-    .option-label input { margin-right: 15px; transform: scale(1.2); accent-color: var(--purple-main); }
+    .options-list { display: flex; flex-direction: column; gap: 12px; }
+    .option-label { display: flex; align-items: center; padding: 12px 15px; background: #2a2a2a; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .option-label:hover { border-color: var(--primary-cyan); background: #333; }
+    .option-label input { margin-right: 15px; transform: scale(1.2); accent-color: var(--primary-cyan); }
     
-    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 20px; border-top: 1px solid #333; }
-    .btn-clear { background-color: #555; } .btn-clear:hover { background-color: #777; }
-    .btn-submit { background-color: var(--green-answered); margin-left: auto; } .btn-submit:hover { background-color: #388e3c; }
+    .action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color); }
+    .btn { padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #fff; text-transform: uppercase; font-size: 0.85rem; }
+    .btn-prev { background: #424242; }
+    .btn-prev:hover { background: #616161; }
+    .btn-clear { background: #f44336; }
+    .btn-clear:hover { background: #d32f2f; }
+    .btn-mark { background: var(--color-marked); }
+    .btn-mark:hover { background: #7b1fa2; }
+    .btn-save { background: var(--primary-blue); margin-left: auto; }
+    .btn-save:hover { background: #1565c0; }
+    .btn-submit { background: var(--color-answered); width: 100%; margin-top: 10px; padding: 12px; }
+    .btn-submit:hover { background: #388e3c; }
+
+    /* Palette Section */
+    .palette-section { width: 320px; background: var(--surface-color); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.3s ease; }
+    .palette-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; overflow-y: auto; }
+    .q-bubble { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem; color: #fff; background: var(--color-not-visited); border: 2px solid transparent; }
+    .q-bubble.active { border-color: var(--primary-cyan); transform: scale(1.1); box-shadow: 0 0 8px var(--primary-cyan); }
     
-    /* Custom Modal (Replaces Browser Alert) */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: var(--bg-panel); padding: 30px; border-radius: 8px; border: 2px solid var(--purple-main); max-width: 90%; width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .modal-content h3 { color: var(--text-main); margin-bottom: 15px; font-size: 1.5rem; }
-    .modal-content p { color: var(--text-muted); margin-bottom: 25px; }
-    .modal-actions { display: flex; justify-content: center; gap: 15px; }
+    .status-0 { background: var(--color-not-visited); color: #000; } 
+    .status-1 { background: var(--color-not-answered); } 
+    .status-2 { background: var(--color-answered); } 
+    .status-3 { background: var(--color-marked); } 
+    .status-4 { background: var(--color-marked); position: relative; } 
+    .status-4::after { content: ''; position: absolute; bottom: 2px; right: 2px; width: 8px; height: 8px; background: var(--color-answered); border-radius: 50%; border: 1px solid #fff; }
+
+    .legend { padding: 15px; font-size: 0.8rem; border-top: 1px solid var(--border-color); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-box { width: 15px; height: 15px; border-radius: 3px; }
+
+    .mobile-toggle { display: none; background: var(--primary-cyan); color: #000; padding: 10px; text-align: center; font-weight: bold; cursor: pointer; }
+
+    /* Custom Modals (No native alerts) */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-content { background: var(--surface-color); padding: 30px; border-radius: 10px; width: 100%; max-width: 500px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    .modal-content h2 { color: var(--primary-cyan); margin-bottom: 20px; }
+    .modal-actions { display: flex; justify-content: center; gap: 15px; margin-top: 25px; }
     
-    /* Palette */
-    .palette-header { padding: 15px; background: var(--purple-dark); text-align: center; font-weight: bold; cursor: pointer; position: sticky; top: 0; z-index: 10; }
-    .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 15px; }
-    .pal-btn { padding: 10px 0; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .status-unvisited { background-color: var(--gray-unvisited); }
-    .status-unanswered { background-color: var(--red-unanswered); }
-    .status-answered { background-color: var(--green-answered); }
-    .pal-btn.active { border: 2px solid #fff; box-shadow: 0 0 8px #fff; transform: scale(1.1); }
+    /* Results View */
+    .results-container { max-width: 800px; margin: auto; padding: 40px 20px; text-align: center; overflow-y: auto; width: 100%; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 30px 0; }
+    .stat-box { background: #2a2a2a; padding: 20px; border-radius: 8px; border-bottom: 4px solid #666; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .stat-box.st-score { border-color: var(--primary-cyan); grid-column: span 2; }
+    .stat-box.st-correct { border-color: var(--color-answered); }
+    .stat-box.st-wrong { border-color: var(--color-not-answered); }
+    .stat-box h3 { font-size: 2.5rem; margin-bottom: 5px; }
+    .stat-box.st-score h3 { font-size: 3.5rem; color: var(--primary-cyan); }
     
-    .legend { display: flex; flex-direction: column; gap: 10px; padding: 15px; border-top: 1px solid #333; font-size: 0.9rem; margin-top: auto; }
-    .legend div { display: flex; align-items: center; gap: 10px; }
-    .legend-box { width: 20px; height: 20px; border-radius: 3px; }
+    /* Detailed Review */
+    .review-list { text-align: left; margin-top: 30px; display: none; }
+    .review-item { padding: 20px; background: #2a2a2a; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid var(--border-color); }
+    .review-item.correct { border-left-color: var(--color-answered); }
+    .review-item.wrong { border-left-color: var(--color-not-answered); }
+    .review-item.unattempted { border-left-color: var(--color-not-visited); }
     
-    /* Review Screens */
-    .dashboard { padding: 20px; text-align: center; flex: 1; overflow-y: auto; }
-    .score-card { display: flex; justify-content: space-around; background: var(--bg-panel); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--purple-main); flex-wrap: wrap;}
-    .stat { display: flex; flex-direction: column; align-items: center; margin: 10px; min-width: 100px; }
-    .stat span { font-size: 2rem; font-weight: bold; color: var(--purple-main); }
-    .review-nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-    .review-nav .btn { background: #333; }
-    .review-nav .btn.active { background: var(--purple-main); }
-    .review-list { text-align: left; }
-    .review-item { background: var(--bg-panel); padding: 15px; margin-bottom: 15px; border-radius: 5px; border-left: 4px solid var(--red-unanswered); }
-    .review-item.unattempted { border-left-color: var(--gray-unvisited); }
-    .correct-ans { color: #4caf50; font-weight: bold; margin-top: 10px; }
-    .user-ans { color: #f44336; font-weight: bold; }
-    .exam-note { background: #2a2a2a; padding: 10px; margin-top: 10px; border-radius: 4px; font-style: italic; color: #ddd; }
-    
-    /* Mobile Responsiveness */
+    .answer-tag { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; }
+    .tag-correct { background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #4caf50; }
+    .tag-wrong { background: rgba(244, 67, 54, 0.2); color: #e57373; border: 1px solid #f44336; }
+    .tag-unattempted { background: rgba(158, 158, 158, 0.2); color: #e0e0e0; border: 1px solid #9e9e9e; }
+
     @media (max-width: 768px) {
-        .container { flex-direction: column; }
-        .sidebar { width: 100%; border-left: none; border-top: 2px solid var(--purple-dark); flex: 0 0 250px; }
-        .palette-grid { grid-template-columns: repeat(8, 1fr); }
-        .action-buttons { flex-direction: column; }
-        .btn-submit { margin-left: 0; width: 100%; }
-        .btn-clear { width: 100%; }
-        header { flex-direction: column; gap: 10px; text-align: center; }
+        .main-container { flex-direction: column; }
+        .mobile-toggle { display: block; }
+        .palette-section { position: absolute; top: 0; right: 0; height: 100%; transform: translateX(100%); z-index: 100; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+        .palette-section.open { transform: translateX(0); }
+        .btn-save { width: 100%; margin-left: 0; margin-top: 10px; }
+        .result-grid { grid-template-columns: 1fr; }
+        .stat-box.st-score { grid-column: span 1; }
     }
 </style>
 </head>
 <body>
 
-<div id="start-screen">
-    <h1>Bilingual Exam Quiz (State & National News)</h1>
-    <p style="margin-bottom: 20px; max-width: 600px; color: var(--text-muted);">
-        Instructions: You have 15 minutes to complete 50 randomized questions. Click below to start the timer. This application is Google Sites embedded compatible (No browser pop-ups).
-    </p>
-    <button class="btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="startQuiz()">I am ready to begin</button>
+<!-- VIEW 1: Landing Page -->
+<div id="view-landing" class="view active">
+    <div class="landing-container">
+        <h1>RRB CBT: Environment & CA Quiz</h1>
+        <div class="instructions">
+            <h3>📝 Instructions:</h3>
+            <ul>
+                <li><strong>Total Questions:</strong> 50 (Bilingual: English & Tamil).</li>
+                <li><strong>Time Allotted:</strong> 15 Minutes.</li>
+                <li><strong>Marking Scheme:</strong> +1 mark for correct answers, <strong>-0.33 marks</strong> for incorrect answers.</li>
+                <li>Questions are shuffled automatically for every attempt.</li>
+                <li>Use the Question Palette to navigate. You can Mark questions for review.</li>
+                <li>Ensure you have a stable connection. Do not refresh the page during the exam.</li>
+            </ul>
+        </div>
+        <button class="start-btn" onclick="startQuiz()">I am ready to begin</button>
+    </div>
 </div>
 
-<div id="quiz-container" class="hidden">
-    <header>
-        <h2>RRB Mock Test</h2>
-        <div class="timer" id="timer-display">15:00</div>
-    </header>
-    <div class="container">
-        <div class="main-content">
-            <div class="question-box">
-                <h3 style="margin-bottom: 15px; color: var(--purple-main);">Question <span id="q-num">1</span> / 50</h3>
-                <div class="question-text" id="q-text"></div>
-                <div class="options-group" id="options-container"></div>
+<!-- VIEW 2: Main Quiz -->
+<div id="view-quiz" class="view">
+    <div class="header">
+        <h1>Environment CA Quiz</h1>
+        <div class="timer-container" id="timer">15:00</div>
+    </div>
+
+    <div class="mobile-toggle" onclick="togglePalette()">☰ Toggle Question Palette</div>
+
+    <div class="main-container">
+        <div class="question-section">
+            <div class="q-header">
+                <span id="q-no">Question 1</span>
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Negative Marks: -0.33</span>
             </div>
+            
+            <div class="question-text" id="q-text-en">Loading...</div>
+            <div class="question-tamil" id="q-text-ta">ஏற்றுகிறது...</div>
+            
+            <div class="options-list" id="options-container"></div>
+            
             <div class="action-buttons">
-                <button class="btn" onclick="prevQuestion()">Previous</button>
-                <button class="btn btn-clear" onclick="clearResponse()">Clear Response</button>
-                <button class="btn" onclick="saveAndNext()">Save & Next</button>
-                <button class="btn btn-submit" onclick="showSubmitModal()">Submit Quiz</button>
+                <button class="btn btn-prev" onclick="prevQuestion()">◄ Previous</button>
+                <button class="btn btn-mark" onclick="markAndNext()">Mark & Next</button>
+                <button class="btn btn-clear" onclick="clearResponse()">Clear</button>
+                <button class="btn btn-save" onclick="saveAndNext()">Save & Next ►</button>
             </div>
         </div>
-        <div class="sidebar">
-            <div class="palette-header" onclick="togglePalette()">Question Palette ▼</div>
+        
+        <div class="palette-section" id="palette">
+            <div class="palette-header">
+                <span>Question Palette</span>
+                <button onclick="togglePalette()" class="btn btn-prev" style="padding: 5px; display: none;" id="close-palette-btn">X</button>
+            </div>
             <div class="palette-grid" id="palette-grid"></div>
             <div class="legend">
-                <div><div class="legend-box status-answered"></div> Answered</div>
-                <div><div class="legend-box status-unanswered"></div> Not Answered (Visited)</div>
-                <div><div class="legend-box status-unvisited"></div> Not Visited</div>
+                <div class="legend-item"><div class="legend-box status-2"></div> Answered</div>
+                <div class="legend-item"><div class="legend-box status-1"></div> Not Answered</div>
+                <div class="legend-item"><div class="legend-box status-0"></div> Not Visited</div>
+                <div class="legend-item"><div class="legend-box status-3"></div> Marked</div>
+                <div class="legend-item"><div class="legend-box status-4"></div> Ans & Marked</div>
+            </div>
+            <div style="padding: 15px;">
+                <button class="btn btn-submit" onclick="showSubmitConfirm()">SUBMIT EXAM</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Custom Modal for Google Sites Compatibility -->
-<div id="custom-modal" class="modal-overlay hidden">
+<!-- Custom Confirmation Modal -->
+<div class="modal-overlay" id="confirm-modal">
     <div class="modal-content">
-        <h3>Submit Assessment?</h3>
-        <p>Are you sure you want to submit? You will not be able to change your answers after submission.</p>
+        <h2>Submit Exam?</h2>
+        <p>Are you sure you want to submit? You will not be able to change your answers.</p>
+        <p id="unanswered-warning" style="color: var(--color-not-answered); margin-top: 10px; font-weight: bold; display: none;"></p>
         <div class="modal-actions">
-            <button class="btn btn-clear" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-submit" onclick="submitQuiz()">Yes, Submit</button>
+            <button class="btn btn-prev" onclick="closeSubmitConfirm()">No, Go Back</button>
+            <button class="btn btn-submit" style="width: auto; margin-top: 0;" onclick="submitExam()">Yes, Submit</button>
         </div>
     </div>
 </div>
 
-<div id="result-screen" class="hidden dashboard">
-    <h1 style="color: var(--purple-main);">Exam Summary</h1>
-    <div class="score-card">
-        <div class="stat"><span>50</span> Total</div>
-        <div class="stat"><span id="score-attempted">0</span> Attempted</div>
-        <div class="stat"><span id="score-correct" style="color: #4caf50;">0</span> Correct</div>
-        <div class="stat"><span id="score-wrong" style="color: #f44336;">0</span> Wrong</div>
-        <div class="stat"><span id="score-unattempted" style="color: var(--gray-unvisited);">0</span> Unattempted</div>
+<!-- VIEW 3: Results & Review -->
+<div id="view-results" class="view">
+    <div class="results-container">
+        <h1 style="color: var(--primary-cyan); font-size: 2.5rem;">Exam Submitted Successfully</h1>
+        
+        <div class="result-grid">
+            <div class="stat-box st-score">
+                <div>Final Score</div>
+                <h3 id="res-score">0.00</h3>
+                <div style="color: var(--text-secondary); font-size: 0.9rem;">(Out of 50)</div>
+            </div>
+            <div class="stat-box st-correct">
+                <h3 id="res-correct">0</h3>
+                <div>Correct</div>
+            </div>
+            <div class="stat-box st-wrong">
+                <h3 id="res-wrong">0</h3>
+                <div>Incorrect</div>
+            </div>
+        </div>
+        
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 20px;">Unattempted Questions: <strong id="res-unattempted" style="color: #fff;">0</strong></p>
+        
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-save" onclick="showDetailedReview()">View Detailed Review</button>
+            <button class="btn btn-prev" onclick="location.reload()">Restart Quiz</button>
+        </div>
+        
+        <div class="review-list" id="review-list">
+            <!-- Review items injected here -->
+        </div>
     </div>
-    
-    <div class="review-nav">
-        <button class="btn active" id="btn-tab-wrong" onclick="showReviewTab('wrong')">Incorrect Answers</button>
-        <button class="btn" id="btn-tab-unattempted" onclick="showReviewTab('unattempted')">Unattempted Answers</button>
-    </div>
-    
-    <div id="review-wrong" class="review-list"></div>
-    <div id="review-unattempted" class="review-list hidden"></div>
 </div>
 
 <script>
-// Raw Data Mapping (50 Unique Questions)
-const rawData = [
-    // --- STATE NEWS (35) ---
-    // Statements (6)
-    {
-        q: "<b>Statement I:</b> Keyi Panyor plans to become India's first 'Bio-Happy District'.<br><b>Statement II:</b> It is located in Arunachal Pradesh.<br><br><b>கூற்று I:</b> இந்தியாவின் முதல் 'உயிரியல்-மகிழ்ச்சி மாவட்டமாக' மாற கெயி பன்யோர் திட்டமிட்டுள்ளது.<br><b>கூற்று II:</b> இது அருணாச்சல பிரதேசத்தில் அமைந்துள்ளது.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 0, n: "Keyi Panyor integrates biodiversity & community well-being in Arunachal Pradesh[cite: 1]."
-    },
-    {
-        q: "<b>Statement I:</b> Naga Mircha is also known as Bhut Jolokia.<br><b>Statement II:</b> It is a GI-Tagged Chilli of Meghalaya.<br><br><b>கூற்று I:</b> நாகா மிர்ச்சா பூட் ஜோலோக்கியா என்றும் அழைக்கப்படுகிறது.<br><b>கூற்று II:</b> இது மேகாலயாவின் புவிசார் குறியீடு பெற்ற மிளகாய்.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 1, n: "Naga Mircha is a GI-Tagged chilli of Nagaland, known for exceeding 1 million SHU[cite: 1]."
-    },
-    {
-        q: "<b>Statement I:</b> Gooty Fort is located in Anantapur district, Andhra Pradesh.<br><b>Statement II:</b> It is built mainly of marble.<br><br><b>கூற்று I:</b> கூட்டிக் கோட்டை ஆந்திரப் பிரதேசத்தின் அனந்தபூர் மாவட்டத்தில் அமைந்துள்ளது.<br><b>கூற்று II:</b> இது முக்கியமாக பளிங்கு கற்களால் கட்டப்பட்டது.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 1, n: "Gooty Fort is built mainly of granite, not marble[cite: 2]."
-    },
-    {
-        q: "<b>Statement I:</b> Kumik has been declared as Ladakh's first heritage village.<br><b>Statement II:</b> It is located in the Zanskar region.<br><br><b>கூற்று I:</b> குமிக் லடாக்கின் முதல் பாரம்பரிய கிராமமாக அறிவிக்கப்பட்டுள்ளது.<br><b>கூற்று II:</b> இது ஜான்ஸ்கர் பகுதியில் அமைந்துள்ளது.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 0, n: "Kumik in Zanskar is known for traditional mud houses & agricultural practices[cite: 2]."
-    },
-    {
-        q: "<b>Statement I:</b> Tulu was approved as the second additional administrative language in Dakshina Kannada & Udupi.<br><b>Statement II:</b> It was approved by the Karnataka Cabinet.<br><br><b>கூற்று I:</b> தட்சிண கன்னடா & உடுப்பியில் இரண்டாவது கூடுதல் நிர்வாக மொழியாக துளு அங்கீகரிக்கப்பட்டது.<br><b>கூற்று II:</b> இதற்கு கர்நாடக அமைச்சரவை ஒப்புதல் அளித்தது.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 0, n: "The Karnataka Cabinet approved Tulu's administrative language status[cite: 2]."
-    },
-    {
-        q: "<b>Statement I:</b> India's first port-based e-Methanol plant is located at Kandla.<br><b>Statement II:</b> Its production capacity is 150 tonnes per day (TPD).<br><br><b>கூற்று I:</b> கண்ட்லாவில் இந்தியாவின் முதல் துறைமுக அடிப்படையிலான மின்-மெத்தனால் ஆலை உள்ளது.<br><b>கூற்று II:</b> இதன் திறன் நாளொன்றுக்கு 150 டன்கள் (TPD).",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 0, n: "Deendayal Port Authority, Kandla, Gujarat supports cleaner shipping with this 150 TPD plant[cite: 3]."
-    },
-    // MCQs (29)
-    {
-        q: "Where was the Global Fintech Fest 2026 inaugurated by PM Narendra Modi? / பிரதமர் நரேந்திர மோடியால் குளோபல் ஃபின்டெக் விழா 2026 எங்கு தொடங்கி வைக்கப்பட்டது?",
-        o: ["New Delhi / புது தில்லி", "Mumbai / மும்பை", "Bengaluru / பெங்களூரு", "Chennai / சென்னை"],
-        a: 1, n: "Inaugurated on 8 September 2026 in Mumbai[cite: 1]."
-    },
-    {
-        q: "Who chaired the 28th Western Zonal Council Meeting in Panaji, Goa? / பனாஜி, கோவாவில் நடைபெற்ற 28வது மேற்கு மண்டல கவுன்சில் கூட்டத்திற்கு தலைமை தாங்கியவர் யார்?",
-        o: ["PM Narendra Modi / பிரதமர் நரேந்திர மோடி", "Union Home Minister Amit Shah / மத்திய உள்துறை அமைச்சர் அமித் ஷா", "Defence Minister Rajnath Singh / பாதுகாப்பு அமைச்சர் ராஜ்நாத் சிங்", "Finance Minister Nirmala Sitharaman / நிதியமைச்சர் நிர்மலா சீதாராமன்"],
-        a: 1, n: "Chaired by Union Home Minister Amit Shah on 7 September 2026[cite: 1]."
-    },
-    {
-        q: "Mandar, which received a GI tag, is a traditional double-headed folk percussion instrument of which state? / புவிசார் குறியீடு பெற்ற மந்தார் எந்த மாநிலத்தின் பாரம்பரிய தாள வாத்தியம்?",
-        o: ["Odisha / ஒடிசா", "Jharkhand / ஜார்க்கண்ட்", "Chhattisgarh / சத்தீஸ்கர்", "Bihar / பீகார்"],
-        a: 1, n: "Mandar belongs to Jharkhand and is crafted using clay and animal hide[cite: 1]."
-    },
-    {
-        q: "Heikru Hidongba is a traditional boat-race festival of which state? / ஹெய்க்கு ஹிடோங்பா எந்த மாநிலத்தின் பாரம்பரிய படகுப் பந்தயத் திருவிழா?",
-        o: ["Kerala / கேரளா", "Manipur / மணிப்பூர்", "Assam / அசாம்", "Tripura / திரிபுரா"],
-        a: 1, n: "Represents Manipur's rich Meitei cultural heritage[cite: 2]."
-    },
-    {
-        q: "Where will the 16th Aero India be held in 2027? / 16வது ஏரோ இந்தியா 2027 இல் எங்கு நடைபெறும்?",
-        o: ["Hyderabad / ஹைதராபாத்", "Bengaluru / பெங்களூரு", "Pune / புனே", "Lucknow / லக்னோ"],
-        a: 1, n: "Venue: Air Force Station Yelahanka, Bengaluru[cite: 2]."
-    },
-    {
-        q: "On which date is Saragarhi Day observed? / சாராகர்கி தினம் எந்த தேதியில் அனுசரிக்கப்படுகிறது?",
-        o: ["12 September / 12 செப்டம்பர்", "17 September / 17 செப்டம்பர்", "13 September / 13 செப்டம்பர்", "15 September / 15 செப்டம்பர்"],
-        a: 0, n: "Observed on 12 September, commemorating the Battle of Saragarhi (1897)[cite: 2]."
-    },
-    {
-        q: "Hyderabad Liberation Day marks the integration of Hyderabad State into the Indian Union in which year? / ஹைதராபாத் விடுதலை தினம் எந்த ஆண்டு இந்திய ஒன்றியத்துடன் இணைக்கப்பட்டதைக் குறிக்கிறது?",
-        o: ["1947", "1948", "1949", "1950"],
-        a: 1, n: "Integration happened in 1948 via Operation Polo[cite: 2]."
-    },
-    {
-        q: "Bidriware is a GI-tagged traditional metal craft originating from? / புவிசார் குறியீடு பெற்ற பாரம்பரிய உலோகக் கைவினைப்பொருளான பித்ரிவேர் எங்கிருந்து உருவானது?",
-        o: ["Karnataka / கர்நாடகா", "Andhra Pradesh / ஆந்திரப் பிரதேசம்", "Telangana / தெலுங்கானா", "Maharashtra / மகாராஷ்டிரா"],
-        a: 0, n: "Bidriware originates from Bidar, Karnataka[cite: 3]."
-    },
-    {
-        q: "Karam Festival, which celebrates nature and agricultural prosperity, is celebrated in? / இயற்கை மற்றும் விவசாய செழிப்பைக் கொண்டாடும் கரம் திருவிழா எங்கு கொண்டாடப்படுகிறது?",
-        o: ["Jharkhand / ஜார்க்கண்ட்", "Rajasthan / ராஜஸ்தான்", "Gujarat / குஜராத்", "Punjab / பஞ்சாப்"],
-        a: 0, n: "It is an important tribal festival in Jharkhand[cite: 3]."
-    },
-    {
-        q: "Where is India's 7th Postal Training Centre located? / இந்தியாவின் 7வது தபால் பயிற்சி மையம் எங்கு அமைந்துள்ளது?",
-        o: ["Shivpuri, Madhya Pradesh / ஷிவ்புரி, மத்திய பிரதேசம்", "Nagpur, Maharashtra / நாக்பூர், மகாராஷ்டிரா", "Surat, Gujarat / சூரத், குஜராத்", "Jaipur, Rajasthan / ஜெய்ப்பூர், ராஜஸ்தான்"],
-        a: 0, n: "Located at Kakarvaya, Shivpuri, Madhya Pradesh[cite: 3]."
-    },
-    {
-        q: "A Commemorative Postage Stamp was released to mark the birth centenary of legendary actor Uttam Kumar. A Film Centre named after him is located in? / புகழ்பெற்ற நடிகர் உத்தம் குமாரின் பிறந்த நூற்றாண்டு விழாவைக் குறிக்கும் வகையில் நினைவு தபால் தலை வெளியிடப்பட்டது. அவர் பெயரிலான திரைப்பட மையம் எங்கு அமைந்துள்ளது?",
-        o: ["Mumbai / மும்பை", "Kolkata / கொல்கத்தா", "Delhi / டெல்லி", "Chennai / சென்னை"],
-        a: 1, n: "The Uttam Kumar Film Centre is located in New Town, Kolkata[cite: 3]."
-    },
-    {
-        q: "Kalari is a GI-tagged traditional cheese associated with? / களாரி என்பது எந்த பகுதியுடன் தொடர்புடைய புவிசார் குறியீடு பெற்ற பாரம்பரிய சீஸ்?",
-        o: ["Himachal Pradesh / ஹிமாச்சல பிரதேசம்", "Jammu & Kashmir / ஜம்மு & காஷ்மீர்", "Uttarakhand / உத்தரகாண்ட்", "Sikkim / சிக்கிம்"],
-        a: 1, n: "Kalari/Kaladi originates from Udhampur district, J&K[cite: 3]."
-    },
-    {
-        q: "The Kishau Multipurpose Project is a 422 MW hydropower project built on which river? / கிஷாவ் பல்நோக்கு திட்டம் (422 MW) எந்த நதியில் கட்டப்பட்டுள்ளது?",
-        o: ["Sutlej River / சட்லஜ் நதி", "Yamuna River / யமுனை நதி", "Tons River / டன்ஸ் நதி", "Ganga River / கங்கை நதி"],
-        a: 2, n: "It is built on the Tons River involving HP, UK, UP, Haryana, Rajasthan & Delhi[cite: 4]."
-    },
-    {
-        q: "Which region developed the world's highest-altitude twin flower fields at 10,600 feet? / 10,600 அடி உயரத்தில் உலகின் மிக உயரமான இரட்டை மலர் வயல்களை உருவாக்கிய பகுதி எது?",
-        o: ["Kashmir / காஷ்மீர்", "Ladakh / லடாக்", "Sikkim / சிக்கிம்", "Arunachal Pradesh / அருணாச்சல பிரதேசம்"],
-        a: 1, n: "Located in Choglamsar & Stakna, Leh, Ladakh[cite: 4]."
-    },
-    {
-        q: "Saitual, which achieved 'Surakshit HIV Status' by meeting 95-95-95 targets, is located in? / 95-95-95 இலக்குகளைப் பூர்த்தி செய்து 'சுரக்ஷித் ஹெச்ஐவி' நிலையை அடைந்த சால்டுவல் எங்கு அமைந்துள்ளது?",
-        o: ["Mizoram / மிசோரம்", "Manipur / மணிப்பூர்", "Nagaland / நாகாலாந்து", "Tripura / திரிபுரா"],
-        a: 0, n: "Saitual is the first & only district in Mizoram to achieve this[cite: 4]."
-    },
-    {
-        q: "The 'Pehchaan' digital portal to identify unclaimed deceased persons was launched by? / உரிமை கோரப்படாத இறந்த நபர்களை அடையாளம் காணும் 'பெஹ்சான்' டிஜிட்டல் தளத்தை அறிமுகப்படுத்திய மாநிலம்?",
-        o: ["Haryana / ஹரியானா", "Punjab / பஞ்சாப்", "Delhi / டெல்லி", "Uttar Pradesh / உத்தரப் பிரதேசம்"],
-        a: 1, n: "Launched by Punjab to help families identify missing relatives[cite: 4]."
-    },
-    {
-        q: "The statue of Maharani Avantibai Lodhi, a prominent leader of the 1857 Revolt, was unveiled in? / 1857 கிளர்ச்சியின் முக்கியத் தலைவரான மகாராணி அவந்திபாய் லோதியின் சிலை எங்கு திறக்கப்பட்டது?",
-        o: ["Bhopal / போபால்", "Lucknow / லக்னோ", "Varanasi / வாரணாசி", "Gwalior / குவாலியர்"],
-        a: 1, n: "Unveiled in Lucknow; she was the Queen-regent of Ramgarh[cite: 4]."
-    },
-    {
-        q: "Where was the First International Film Festival of Jammu & Kashmir 2026 held? / 2026 ஆம் ஆண்டின் ஜம்மு காஷ்மீரின் முதல் சர்வதேச திரைப்பட விழா எங்கு நடைபெற்றது?",
-        o: ["Jammu / ஜம்மு", "Srinagar / ஸ்ரீநகர்", "Anantnag / அனந்த்நாக்", "Leh / லே"],
-        a: 1, n: "Venue: SKICC, Srinagar. Theme: 'Rang-e-Cinema'[cite: 4]."
-    },
-    {
-        q: "Paniya Tribe is a major Scheduled Tribe of which state? / பனியா பழங்குடியினர் எந்த மாநிலத்தின் முக்கிய பட்டியலின பழங்குடியினர்?",
-        o: ["Kerala / கேரளா", "Tamil Nadu / தமிழ்நாடு", "Karnataka / கர்நாடகா", "Andhra Pradesh / ஆந்திரப் பிரதேசம்"],
-        a: 0, n: "Mainly distributed in Wayanad, Kerala[cite: 5]."
-    },
-    {
-        q: "Asia's First Telecom Manufacturing Zone is being established in? / ஆசியாவின் முதல் தொலைத்தொடர்பு உற்பத்தி மண்டலம் எங்கு நிறுவப்பட்டுள்ளது?",
-        o: ["Pune / புனே", "Gwalior / குவாலியர்", "Noida / நொய்டா", "Hyderabad / ஹைதராபாத்"],
-        a: 1, n: "Located in Gwalior, Madhya Pradesh with an investment of around ₹5,500 crore[cite: 5]."
-    },
-    {
-        q: "India's first LNG-powered train was launched from which location? / இந்தியாவின் முதல் எல்என்ஜி-ஆல் இயங்கும் ரயில் எங்கிருந்து தொடங்கப்பட்டது?",
-        o: ["Sabarmati, Gujarat / சபர்மதி, குஜராத்", "Varanasi, UP / வாரணாசி, உ.பி", "Howrah, West Bengal / ஹவுரா, மேற்கு வங்காளம்", "Mumbai, Maharashtra / மும்பை, மகாராஷ்டிரா"],
-        a: 0, n: "Launched on 27 September 2026 from Sabarmati; it's a dual-fuel DEMU train[cite: 5]."
-    },
-    {
-        q: "Which is the first state in India to introduce a mandatory Hazard Perception Test (HPT) for driving licences? / ஓட்டுநர் உரிமங்களுக்கு கட்டாய அபாய உணர்திறன் சோதனையை (HPT) இந்தியாவில் முதன்முதலில் அறிமுகப்படுத்திய மாநிலம் எது?",
-        o: ["Tamil Nadu / தமிழ்நாடு", "Kerala / கேரளா", "Maharashtra / மகாராஷ்டிரா", "Delhi / டெல்லி"],
-        a: 1, n: "Kerala introduced this computer-based road-safety assessment[cite: 5]."
-    },
-    {
-        q: "Which state launched 'Bharat Taxi' and 'Krishak Samriddhi Yojana'? / 'பாரத் டாக்சி' மற்றும் 'கிருஷக் சம்ரித்தி யோஜனா' ஆகியவற்றை வெளியிட்ட மாநிலம் எது?",
-        o: ["Uttar Pradesh / உத்தரப் பிரதேசம்", "Madhya Pradesh / மத்திய பிரதேசம்", "Haryana / ஹரியானா", "Bihar / பீகார்"],
-        a: 0, n: "Launched by UP; Bharat Taxi is a cooperative-led ride-hailing platform[cite: 5]."
-    },
-    {
-        q: "MHA proposed inserting which Article to provide Ladakh a directly elected governing body with legislative powers? / லடாக்கிற்குச் சட்டமன்ற அதிகாரங்களைக் கொண்ட நேரடியாகத் தேர்ந்தெடுக்கப்பட்ட ஆளும் குழுவை வழங்க MHA எந்த சட்டப்பிரிவை முன்மொழிந்தது?",
-        o: ["Article 371(F) / பிரிவு 371(F)", "Article 371(K) / பிரிவு 371(K)", "Article 371(A) / பிரிவு 371(A)", "Article 371(J) / பிரிவு 371(J)"],
-        a: 1, n: "Proposal: Insert Article 371(K) under Part XXI[cite: 5]."
-    },
-    {
-        q: "The Drass Festival 2026 focuses on showcasing tourism and culture of which region? / டிராஸ் திருவிழா 2026 எந்தப் பகுதியின் சுற்றுலா மற்றும் கலாச்சாரத்தை வெளிப்படுத்துவதில் கவனம் செலுத்துகிறது?",
-        o: ["Himachal Pradesh / ஹிமாச்சல பிரதேசம்", "Uttarakhand / உத்தரகாண்ட்", "Ladakh / லடாக்", "Sikkim / சிக்கிம்"],
-        a: 2, n: "Located in Drass, Ladakh[cite: 5]."
-    },
-    {
-        q: "A four-member team from Kerala recently scaled Ramjak Peak. In which state is this peak located? / சமீபத்தில் கேரளக் குழுவொன்று ஏறிய ரம்ஜாக் சிகரம் எந்த மாநிலத்தில் அமைந்துள்ளது?",
-        o: ["Uttarakhand / உத்தரகாண்ட்", "Himachal Pradesh / ஹிமாச்சல பிரதேசம்", "Arunachal Pradesh / அருணாச்சல பிரதேசம்", "Sikkim / சிக்கிம்"],
-        a: 1, n: "Ramjak Peak (6,318m) is in the Lahaul region of Himachal Pradesh[cite: 6]."
-    },
-    {
-        q: "Ghepan Glacial Lake, recently monitored for GLOF risks, is located in? / சமீபத்தில் GLOF அபாயங்களுக்காக கண்காணிக்கப்பட்ட கெபன் பனிப்பாறை ஏரி எங்கு அமைந்துள்ளது?",
-        o: ["Uttarakhand / உத்தரகாண்ட்", "Sikkim / சிக்கிம்", "Himachal Pradesh / ஹிமாச்சல பிரதேசம்", "Ladakh / லடாக்"],
-        a: 2, n: "Located in Lahaul-Spiti, Himachal Pradesh[cite: 6]."
-    },
-    {
-        q: "Deendayal Lado Lakshmi Yojana (Phase II), offering Rs 2,100 per month to eligible women, was launched in? / தகுதியுள்ள பெண்களுக்கு மாதம் ₹2,100 வழங்கும் தீன்தயாள் லாடோ லட்சுமி யோஜனா (இரண்டாம் கட்டம்) எங்கு தொடங்கப்பட்டது?",
-        o: ["Madhya Pradesh / மத்திய பிரதேசம்", "Haryana / ஹரியானா", "Rajasthan / ராஜஸ்தான்", "Gujarat / குஜராத்"],
-        a: 1, n: "Launched by Haryana CM Nayab Singh Saini[cite: 6]."
-    },
-    {
-        q: "The Pangwala Tribal Community, whose gut microbiome was recently examined, belongs to? / குடல் நுண்ணுயிரி சமீபத்தில் ஆய்வு செய்யப்பட்ட பாங்வாலா பழங்குடி சமூகம் எந்த மாநிலத்தைச் சேர்ந்தது?",
-        o: ["Himachal Pradesh / ஹிமாச்சல பிரதேசம்", "Uttarakhand / உத்தரகாண்ட்", "Arunachal Pradesh / அருணாச்சல பிரதேசம்", "Mizoram / மிசோரம்"],
-        a: 0, n: "Scheduled Tribe of Pangi Valley, Chamba district, Himachal Pradesh[cite: 6]."
-    },
+// Base Data containing 50 questions (no citations, 5 statement types)
+const baseQuizData = [
+    {qE: "Glaw Lake, recently designated as a Ramsar site, is located in which state?", qT: "சமீபத்தில் ராம்சர் தளமாக அறிவிக்கப்பட்ட க்ளா ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Assam", "Sikkim", "Arunachal Pradesh", "Nagaland"], oT: ["அசாம்", "சிக்கிம்", "அருணாச்சல பிரதேசம்", "நாகாலாந்து"], a: 2},
+    {qE: "Shekha Jheel Bird Sanctuary Is Located In Which State?", qT: "ஷேகா ஜீல் பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Bihar", "Rajasthan", "Uttar Pradesh"], oT: ["தமிழ்நாடு", "பீகார்", "ராஜஸ்தான்", "உத்தரபிரதேசம்"], a: 3},
+    {qE: "Chhari-Dhand Wetland is located in which state?", qT: "சாரி-தந்த் ஈரநிலம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Assam", "Kerala", "Odisha"], oT: ["குஜராத்", "அசாம்", "கேரளா", "ஒடிசா"], a: 0},
+    {qE: "Kopra Jalashay Is Located In Which State?", qT: "கோப்ரா நீர்த்தேக்கம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Chhattisgarh", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["சத்தீஸ்கர்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 0},
+    {qE: "Gokul Jalashay is located in which state?", qT: "கோகுல் நீர்த்தேக்கம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Uttar Pradesh", "Bihar", "Jharkhand", "West Bengal"], oT: ["உத்தரபிரதேசம்", "பீகார்", "ஜார்க்கண்ட்", "மேற்கு வங்காளம்"], a: 1},
+    {qE: "When Is World Environment Day Observed Every year?", qT: "ஒவ்வொரு ஆண்டும் உலக சுற்றுச்சூழல் தினம் எப்போது அனுசரிக்கப்படுகிறது?", oE: ["5th June", "6th June", "4th June", "7th June"], oT: ["ஜூன் 5", "ஜூன் 6", "ஜூன் 4", "ஜூன் 7"], a: 0},
+    {qE: "India's First AI-Powered Bird Sanctuary Is Being Developed In Which State?", qT: "இந்தியாவின் முதல் AI-ஆதரவு பறவைகள் சரணாலயம் எந்த மாநிலத்தில் உருவாக்கப்படுகிறது?", oE: ["Gujarat", "Maharashtra", "Karnataka", "Kerala"], oT: ["குஜராத்", "மகாராஷ்டிரா", "கர்நாடகா", "கேரளா"], a: 1},
+    {qE: "What Is The Name Of India's First Hydrogen-Powered Train?", qT: "இந்தியாவின் முதல் ஹைட்ரஜன் ரயிலின் பெயர் என்ன?", oE: ["NaMo Green Rail", "Vande Bharat Green", "Hydrogen Express", "Amrit Green Rail"], oT: ["நமோ கிரீன் ரயில்", "வந்தே பாரத் கிரீன்", "ஹைட்ரஜன் எக்ஸ்பிரஸ்", "அம்ரித் கிரீன் ரயில்"], a: 0},
+    {qE: "Borjuli Biodiversity Heritage Site Is Located In Which State?", qT: "போர்ஜுலி பல்லுயிர் பாரம்பரிய தளம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Arunachal Pradesh", "Assam", "Meghalaya", "West Bengal"], oT: ["அருணாச்சல பிரதேசம்", "அசாம்", "மேகாலயா", "மேற்கு வங்காளம்"], a: 1},
+    {qE: "India's First Commercial-Scale Coal-to-Ammonium Nitrate Project Is Being Set Up In Which State?", qT: "இந்தியாவின் முதல் வணிக ரீதியான நிலக்கரியில் இருந்து அம்மோனியம் நைட்ரேட் திட்டம் எந்த மாநிலத்தில் அமைக்கப்படுகிறது?", oE: ["Jharkhand", "Chhattisgarh", "Odisha", "Madhya Pradesh"], oT: ["ஜார்க்கண்ட்", "சத்தீஸ்கர்", "ஒடிசா", "மத்திய பிரதேசம்"], a: 2},
+    {qE: "E85 Fuel Contains Approximately How Much Ethanol?", qT: "E85 எரிபொருளில் தோராயமாக எவ்வளவு எத்தனால் உள்ளது?", oE: ["20%", "50%", "80-85%", "100%"], oT: ["20%", "50%", "80-85%", "100%"], a: 2},
+    {qE: "Which District Has Been Declared India's First Pearl Farming Cluster?", qT: "இந்தியாவின் முதல் முத்து வளர்ப்பு கிளஸ்டராக அறிவிக்கப்பட்ட மாவட்டம் எது?", oE: ["Patna", "Hazaribag", "Pilibhit", "Raipur"], oT: ["பாட்னா", "ஹசாரிபாக்", "பிலிபித்", "ராய்ப்பூர்"], a: 1},
+    {qE: "India's First Satellite-Tagged Ganges Soft-Shell Turtle Was Released In Which National Park?", qT: "இந்தியாவின் முதல் செயற்கைக்கோள் குறியிடப்பட்ட கங்கை மென்மையான ஓடு ஆமை எந்த தேசிய பூங்காவில் விடுவிக்கப்பட்டது?", oE: ["Jim Corbett National Park", "Kaziranga National Park", "Ranthambore National Park", "Bandipur National Park"], oT: ["ஜிம் கார்பெட் தேசிய பூங்கா", "காசிரங்கா தேசிய பூங்கா", "ரந்தம்பூர் தேசிய பூங்கா", "பந்திப்பூர் தேசிய பூங்கா"], a: 1},
+    {qE: "Jai Prakash Narayan Bird Sanctuary Is Located In Which State?", qT: "ஜெய் பிரகாஷ் நாராயண் பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Bihar", "Uttar Pradesh", "Rajasthan"], oT: ["தமிழ்நாடு", "பீகார்", "உத்தரபிரதேசம்", "ராஜஸ்தான்"], a: 2},
+    {qE: "Osbeckia zubeengargiana, New Plant Species Has Been Discovered In Which National Park?", qT: "ஒஸ்பெகியா ஜூபின்கார்கியானா என்ற புதிய தாவர இனம் எந்த தேசிய பூங்காவில் கண்டுபிடிக்கப்பட்டுள்ளது?", oE: ["Kaziranga", "Jim Corbett", "Manas", "Sundarbans"], oT: ["காசிரங்கா", "ஜிம் கார்பெட்", "மனாஸ்", "சுந்தரவனக் காடுகள்"], a: 2},
+    {qE: "Shongtong-Karchham Hydroelectric Project Is Located On Which River?", qT: "ஷோங்டாங்-கர்ச்சாம் நீர்மின் திட்டம் எந்த நதியில் அமைந்துள்ளது?", oE: ["Beas", "Chenab", "Ravi", "Sutlej"], oT: ["பியாஸ்", "சீனாப்", "ரவி", "சட்லெஜ்"], a: 3},
+    {qE: "Musi River Rejuvenation Project Is Launched In Which State?", qT: "மூசி நதி சீரமைப்பு திட்டம் எந்த மாநிலத்தில் தொடங்கப்பட்டுள்ளது?", oE: ["Karnataka", "Maharashtra", "Andhra Pradesh", "Telangana"], oT: ["கர்நாடகா", "மகாராஷ்டிரா", "ஆந்திர பிரதேசம்", "தெலுங்கானா"], a: 3},
+    {qE: "Which African Country Supplied 9 Cheetahs To India Under Project Cheetah On 28th Feb 2026?", qT: "பிப்ரவரி 28, 2026 அன்று ப்ராஜெக்ட் சீட்டா திட்டத்தின் கீழ் எந்த ஆப்பிரிக்க நாடு 9 சிறுத்தைகளை இந்தியாவுக்கு வழங்கியது?", oE: ["Botswana", "Uganda", "Mali", "Kenya"], oT: ["போட்ஸ்வானா", "உகாண்டா", "மாலி", "கென்யா"], a: 0},
+    {qE: "Patna Bird Sanctuary Is Located In Which State?", qT: "பாட்னா பறவைகள் சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Uttar Pradesh", "Bihar", "Rajasthan", "Madhya Pradesh"], oT: ["உத்தரபிரதேசம்", "பீகார்", "ராஜஸ்தான்", "மத்திய பிரதேசம்"], a: 0},
+    {qE: "The Kalai-II Hydropower Project Is Planned On Which River?", qT: "கலை-II நீர்மின் திட்டம் எந்த நதியில் திட்டமிடப்பட்டுள்ளது?", oE: ["Ganga", "Lohit", "Yamuna", "Tapti"], oT: ["கங்கை", "லோஹித்", "யமுனா", "தப்தி"], a: 1},
+    {qE: "Which Wildlife Sanctuary Has Been Declared Kerala's First Butterfly Sanctuary?", qT: "கேரளாவின் முதல் பட்டாம்பூச்சி சரணாலயமாக எந்த வனவிலங்கு சரணாலயம் அறிவிக்கப்பட்டுள்ளது?", oE: ["Wayanad", "Periyar", "Aralam", "Silent Valley"], oT: ["வயநாடு", "பெரியார்", "ஆராளம்", "சைலண்ட் வேலி"], a: 2},
+    {qE: "World's Largest Green Ammonia Project Is Being Developed In Which State?", qT: "உலகின் மிகப்பெரிய பசுமை அம்மோனியா திட்டம் எந்த மாநிலத்தில் உருவாக்கப்படுகிறது?", oE: ["Gujarat", "Maharashtra", "Andhra Pradesh", "Karnataka"], oT: ["குஜராத்", "மகாராஷ்டிரா", "ஆந்திர பிரதேசம்", "கர்நாடகா"], a: 2},
+    {qE: "Keyi Panyor District, Became India's First Bio-Happy District, Is Located In Which State?", qT: "இந்தியாவின் முதல் பயோ-ஹேப்பி மாவட்டமாக மாறிய கெயி பன்யோர் மாவட்டம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Assam", "Arunachal Pradesh", "Meghalaya", "Nagaland"], oT: ["அசாம்", "அருணாச்சல பிரதேசம்", "மேகாலயா", "நாகாலாந்து"], a: 1},
+    {qE: "Kumbhalgarh Wildlife Sanctuary, Recently Declared An Eco-Sensitive Zone, Is Located In Which State?", qT: "சமீபத்தில் சுற்றுச்சூழல் உணர்திறன் மண்டலமாக அறிவிக்கப்பட்ட கும்பல்கர் வனவிலங்கு சரணாலயம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Rajasthan", "Madhya Pradesh", "Uttar Pradesh"], oT: ["குஜராத்", "ராஜஸ்தான்", "மத்திய பிரதேசம்", "உத்தரபிரதேசம்"], a: 1},
+    {qE: "Which State Has The Highest Renewable Energy Capacity In India?", qT: "இந்தியாவில் அதிக புதுப்பிக்கத்தக்க ஆற்றல் திறன் கொண்ட மாநிலம் எது?", oE: ["Rajasthan", "Tamil Nadu", "Gujarat", "Maharashtra"], oT: ["ராஜஸ்தான்", "தமிழ்நாடு", "குஜராத்", "மகாராஷ்டிரா"], a: 2},
+    {qE: "Which Country Was Hit By Cyclone Gezani In 2026?", qT: "2026 இல் கெசானி புயலால் தாக்கப்பட்ட நாடு எது?", oE: ["Mozambique", "Madagascar", "Indonesia", "Philippines"], oT: ["மொசாம்பிக்", "மடகாஸ்கர்", "இந்தோனேசியா", "பிலிப்பைன்ஸ்"], a: 1},
+    {qE: "Siliserh Lake is located in which state?", qT: "சிலிசெர் ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Chhattisgarh", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["சத்தீஸ்கர்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 3},
+    {qE: "Ramgarh Vishdhari Tiger Reserve Is Located In Which State?", qT: "ராம்கர் விஷ்தாரி புலிகள் காப்பகம் எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Madhya Pradesh", "Rajasthan", "Uttarakhand", "Tamil Nadu"], oT: ["மத்திய பிரதேசம்", "ராஜஸ்தான்", "உத்தரகாண்ட்", "தமிழ்நாடு"], a: 1},
+    {qE: "Which State Became A Tiger State After 33 Years As Declared By NTCA?", qT: "NTCA அறிவித்தபடி 33 ஆண்டுகளுக்குப் பிறகு புலிகள் மாநிலமாக மாறிய மாநிலம் எது?", oE: ["Madhya Pradesh", "Rajasthan", "Gujarat", "Maharashtra"], oT: ["மத்திய பிரதேசம்", "ராஜஸ்தான்", "குஜராத்", "மகாராஷ்டிரா"], a: 2},
+    {qE: "Who Won The 2025 UNEP Champions Of The Earth Award?", qT: "2025 UNEP சாம்பியன்ஸ் ஆஃப் தி எர்த் விருதை வென்றவர் யார்?", oE: ["Madhav Gadgil", "Vandana Shiva", "Sunita Narain", "Supriya Sahu"], oT: ["மாதவ் காட்கில்", "வந்தனா சிவா", "சுனிதா நரேன்", "சுப்ரியா சாஹு"], a: 3},
+    {qE: "Which Country Named Cyclone Ditwah?", qT: "திட்வா புயலுக்கு பெயரிட்ட நாடு எது?", oE: ["Oman", "Iran", "Saudi Arabia", "Yemen"], oT: ["ஓமன்", "ஈரான்", "சவுதி அரேபியா", "ஏமன்"], a: 3},
+    {qE: "Saranda Forest Is Located In Which State?", qT: "சரண்டா காடு எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Tamil Nadu", "Tripura", "Gujarat", "Jharkhand"], oT: ["தமிழ்நாடு", "திரிபுரா", "குஜராத்", "ஜார்க்கண்ட்"], a: 3},
+    {qE: "Which Volcano Recently Erupted After 12,000 Years?", qT: "12,000 ஆண்டுகளுக்குப் பிறகு சமீபத்தில் வெடித்த எரிமலை எது?", oE: ["Popocatépetl", "Hayli Gubbi", "Kilauea", "Mount Etna"], oT: ["போபோகாடெபெட்ல்", "ஹெய்லி குப்பி", "கிலாவியா", "எட்னா மலை"], a: 1},
+    {qE: "Parvati-Arga Bird Sanctuary Of Which State Declared Eco-Sensitive Zone?", qT: "எந்த மாநிலத்தின் பார்வதி-ஆர்கா பறவைகள் சரணாலயம் சுற்றுச்சூழல் உணர்திறன் மண்டலமாக அறிவிக்கப்பட்டது?", oE: ["Uttarakhand", "Bihar", "Gujarat", "Uttar Pradesh"], oT: ["உத்தரகாண்ட்", "பீகார்", "குஜராத்", "உத்தரபிரதேசம்"], a: 3},
+    {qE: "Gogabeel Lake Is Located In Which State?", qT: "கோகாபீல் ஏரி எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Bihar", "Gujarat", "Uttarakhand", "Rajasthan"], oT: ["பீகார்", "குஜராத்", "உத்தரகாண்ட்", "ராஜஸ்தான்"], a: 0},
+    {qE: "Which Country Became The 90th Member Of IUCN?", qT: "IUCN இன் 90வது உறுப்பு நாடாக மாறிய நாடு எது?", oE: ["Fiji", "Tuvalu", "Vanuatu", "Kiribati"], oT: ["பிஜி", "துவாலு", "வனுவாட்டு", "கிரிபாட்டி"], a: 1},
+    {qE: "In Which State Is India's First Dugong Conservation Reserve Located?", qT: "இந்தியாவின் முதல் டுகோங் பாதுகாப்பு இருப்பு எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Kerala", "Andhra Pradesh", "Tamil Nadu"], oT: ["குஜராத்", "கேரளா", "ஆந்திர பிரதேசம்", "தமிழ்நாடு"], a: 3},
+    {qE: "In Which District Was Rajasthan's First Namo Biodiversity Park Inaugurated?", qT: "ராஜஸ்தானின் முதல் நமோ பல்லுயிர் பூங்கா எந்த மாவட்டத்தில் திறக்கப்பட்டது?", oE: ["Jaipur", "Alwar", "Jodhpur", "Udaipur"], oT: ["ஜெய்ப்பூர்", "ஆல்வார்", "ஜோத்பூர்", "உதய்பூர்"], a: 1},
+    {qE: "Which Country Launched Southeast Asia's 1st Coral Larvae Cryobank?", qT: "தென்கிழக்கு ஆசியாவின் 1வது பவள லார்வா கிரையோபேங்கை அறிமுகப்படுத்திய நாடு எது?", oE: ["Indonesia", "Philippines", "Malaysia", "Thailand"], oT: ["இந்தோனேசியா", "பிலிப்பைன்ஸ்", "மலேசியா", "தாய்லாந்து"], a: 1},
+    {qE: "India Ranks Which Position Globally In Total Forest Area?", qT: "மொத்த வனப்பரப்பில் உலகளவில் இந்தியா எத்தனையாவது இடத்தில் உள்ளது?", oE: ["7th", "9th", "11th", "13th"], oT: ["7வது", "9வது", "11வது", "13வது"], a: 1},
+    {qE: "Shrivardhan Beach Is Located In Which State?", qT: "ஸ்ரீவர்தன் கடற்கரை எந்த மாநிலத்தில் அமைந்துள்ளது?", oE: ["Gujarat", "Odisha", "Maharashtra", "Kerala"], oT: ["குஜராத்", "ஒடிசா", "மகாராஷ்டிரா", "கேரளா"], a: 2},
+    {qE: "Which State's Cold Desert Biosphere Reserve Was Recently Added To UNESCO's World Network?", qT: "எந்த மாநிலத்தின் குளிர் பாலைவன உயிர்க்கோள இருப்பு சமீபத்தில் யுனெஸ்கோவின் உலக நெட்வொர்க்கில் சேர்க்கப்பட்டது?", oE: ["Uttarakhand", "Himachal Pradesh", "Sikkim", "Arunachal Pradesh"], oT: ["உத்தரகாண்ட்", "இமாச்சல பிரதேசம்", "சிக்கிம்", "அருணாச்சல பிரதேசம்"], a: 1},
+    {qE: "When Is 'World Ozone Day' Celebrated Every Year?", qT: "ஒவ்வொரு ஆண்டும் 'உலக ஓசோன் தினம்' எப்போது கொண்டாடப்படுகிறது?", oE: ["15 Sept", "16 Sept", "14 Sept", "12 Sept"], oT: ["செப் 15", "செப் 16", "செப் 14", "செப் 12"], a: 1},
+    {qE: "Which Region Has India Obtained Exclusive Rights To Explore For Polymetallic Sulphides?", qT: "பாலிமெட்டாலிக் சல்பைடுகளை ஆராய்வதற்கான பிரத்யேக உரிமையை இந்தியா எந்தப் பகுதியில் பெற்றுள்ளது?", oE: ["Carlsberg Ridge", "Mid-Atlantic Ridge", "Afar Triple Junction", "Mariana Trench"], oT: ["கார்ல்ஸ்பெர்க் ரிட்ஜ்", "மத்திய அட்லாண்டிக் ரிட்ஜ்", "அஃபார் ட்ரிபிள் ஜங்ஷன்", "மரியானா அகழி"], a: 0},
+    {qE: "Which Ministry Launched India's First National Policy On Geothermal Energy In 2025?", qT: "2025 ஆம் ஆண்டில் புவிவெப்ப ஆற்றல் குறித்த இந்தியாவின் முதல் தேசியக் கொள்கையை எந்த அமைச்சகம் வெளியிட்டது?", oE: ["Environment, Forest & Climate Change", "Earth Sciences", "New and Renewable Energy", "Power"], oT: ["சுற்றுச்சூழல், காடு மற்றும் காலநிலை மாற்றம்", "புவி அறிவியல்", "புதிய மற்றும் புதுப்பிக்கத்தக்க ஆற்றல்", "மின்சாரம்"], a: 2},
     
-    // --- NATIONAL NEWS (15) ---
-    // Statements (3)
-    {
-        q: "<b>Statement I:</b> The e-FAST India Initiative was launched by NITI Aayog.<br><b>Statement II:</b> PACT is a platform under e-FAST India.<br><br><b>கூற்று I:</b> e-FAST இந்தியா முன்முயற்சி நிதி ஆயோக் அமைப்பால் தொடங்கப்பட்டது.<br><b>கூற்று II:</b> PACT என்பது e-FAST இந்தியாவின் கீழான ஒரு தளம்.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 0, n: "Launched by NITI Aayog, PACT stands for Platform for Aggregating Clean Transport[cite: 9]."
-    },
-    {
-        q: "<b>Statement I:</b> The 7th National Formulary of India contains 653 monographs.<br><b>Statement II:</b> It was launched by PM Narendra Modi.<br><br><b>கூற்று I:</b> 7வது தேசிய இந்திய மருந்துப் பட்டியலில் 653 மோனோகிராஃப்கள் உள்ளன.<br><b>கூற்று II:</b> இது பிரதமர் நரேந்திர மோடியால் வெளியிடப்பட்டது.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 1, n: "It was launched by Union MoS Anupriya Patel, not PM Modi[cite: 9]."
-    },
-    {
-        q: "<b>Statement I:</b> Hartalika Teej is dedicated to Goddess Parvati and Lord Shiva.<br><b>Statement II:</b> In Karnataka, it is known as Gowri Habba.<br><br><b>கூற்று I:</b> ஹர்தாலிகா தீஜ் பார்வதி தேவி மற்றும் சிவபெருமானுக்கு அர்ப்பணிக்கப்பட்டது.<br><b>கூற்று II:</b> கர்நாடகாவில் இது கௌரி ஹப்பா என்று அழைக்கப்படுகிறது.",
-        o: ["Both I and II are true / I மற்றும் II இரண்டும் சரி", "I is true, II is false / I சரி, II தவறு", "I is false, II is true / I தவறு, II சரி", "Both I and II are false / I மற்றும் II இரண்டும் தவறு"],
-        a: 0, n: "Both are true. It symbolises marital well-being[cite: 10]."
-    },
-    // MCQs (12)
-    {
-        q: "What is the approved financial outlay for the Semicon 2.0 initiative? / செமிகான் 2.0 திட்டத்திற்கான அங்கீகரிக்கப்பட்ட நிதி ஒதுக்கீடு எவ்வளவு?",
-        o: ["₹1,27,500 crore / ₹1,27,500 கோடி", "₹1,50,000 crore / ₹1,50,000 கோடி", "₹90,000 crore / ₹90,000 கோடி", "₹2,00,000 crore / ₹2,00,000 கோடி"],
-        a: 0, n: "Approved by the Union Cabinet on 15 July 2026 with a ₹1,27,500 crore outlay[cite: 10]."
-    },
-    {
-        q: "Seva Sankalp Abhiyan 2026 marks how many years of PM Narendra Modi in public service? / சேவா சங்கல்ப் அபியான் 2026 பிரதமர் நரேந்திர மோடியின் பொது சேவையில் எத்தனை ஆண்டுகளைக் குறிக்கிறது?",
-        o: ["20 years / 20 ஆண்டுகள்", "25 years / 25 ஆண்டுகள்", "30 years / 30 ஆண்டுகள்", "15 years / 15 ஆண்டுகள்"],
-        a: 1, n: "Marks 25 years since Modi became Gujarat CM in 2001[cite: 10]."
-    },
-    {
-        q: "What is the theme of Swachhata Hi Seva 2026? / தூய்மையே சேவை 2026 இன் கருப்பொருள் என்ன?",
-        o: ["Clean India, Green India", "Swachhata Mein Sahbhag, Swachh Bharat, Viksit Bharat", "Plastic Free India", "Swachhata Hi Dharam"],
-        a: 1, n: "Theme: Swachhata Mein Sahbhag, Swachh Bharat, Viksit Bharat[cite: 11]."
-    },
-    {
-        q: "Where was the 9th Rashtriya Poshan Maah 2026 launched by Union Minister Annpurna Devi? / மத்திய அமைச்சர் அன்னபூர்ணா தேவியால் 9வது ராஷ்ட்ரிய போஷான் மாதம் 2026 எங்கு தொடங்கப்பட்டது?",
-        o: ["Varanasi / வாரணாசி", "Lucknow / லக்னோ", "Patna / பாட்னா", "Bhopal / போபால்"],
-        a: 0, n: "Venue: Rudraksh Convention Centre, Varanasi[cite: 11]."
-    },
-    {
-        q: "How many members are there in the newly reconstituted Central Board of Film Certification (CBFC) in 2026? / 2026 இல் மறுசீரமைக்கப்பட்ட திரைப்பட சான்றிதழின் மத்திய குழுவில் (CBFC) எத்தனை உறுப்பினர்கள் உள்ளனர்?",
-        o: ["12", "15", "18", "21"],
-        a: 2, n: "Reconstituted with an 18-member board chaired by Shashi Shekhar Vempati[cite: 11]."
-    },
-    {
-        q: "Under the Passports (Amendment) Rules 2026, what is the validity of an ordinary 36-page minor passport? / கடவுச்சீட்டு (திருத்த) விதிகள் 2026 இன் படி, சிறியவர்களுக்கான சாதாரண 36 பக்க கடவுச்சீட்டின் செல்லுபடியாகும் காலம் என்ன?",
-        o: ["10 years / 10 ஆண்டுகள்", "5 years from issue or until age 18 / வழங்கப்பட்டதிலிருந்து 5 ஆண்டுகள் அல்லது 18 வயது வரை", "Until age 21 / 21 வயது வரை", "3 years / 3 ஆண்டுகள்"],
-        a: 1, n: "Validity: 5 years from issue or until age 18[cite: 11]."
-    },
-    {
-        q: "Doordarshan celebrated which Foundation Day on 15 September 2026? / 15 செப்டம்பர் 2026 அன்று தூர்தர்ஷன் எந்த நிறுவன தினத்தைக் கொண்டாடியது?",
-        o: ["50th / 50வது", "60th / 60வது", "67th / 67வது", "75th / 75வது"],
-        a: 2, n: "Completed 67 years; it was established on 15 September 1959[cite: 12]."
-    },
-    {
-        q: "Which institute launched the 'AyurVarta' special digital dialogue series? / 'ஆயுர்வார்தா' சிறப்பு டிஜிட்டல் உரையாடல் தொடரை எந்த நிறுவனம் அறிமுகப்படுத்தியது?",
-        o: ["All India Institute of Medical Sciences (AIIMS)", "All India Institute of Ayurveda (AIIA)", "Indian Council of Medical Research (ICMR)", "National Institute of Siddha (NIS)"],
-        a: 1, n: "Launched by AIIA, New Delhi on 1 September 2026[cite: 12]."
-    },
-    {
-        q: "Under Operation Deep Manifest, what goods were intercepted by the DRI? / ஆப்பரேஷன் டீப் மேனிஃபெஸ்ட்டின் கீழ், DRI ஆல் என்ன பொருட்கள் இடைமறிக்கப்பட்டன?",
-        o: ["Gold bullion / தங்கம்", "Pakistan-origin dry dates / பாகிஸ்தான் வம்சாவளி உலர் பேரீச்சம்பழங்கள்", "Counterfeit currency / கள்ள நோட்டுகள்", "Narcotics / போதைப்பொருட்கள்"],
-        a: 1, n: "Over 362 MT of Pakistan-origin dry dates routed via UAE[cite: 12]."
-    },
-    {
-        q: "PM Modi unveiled the Birth Centenary Logo for Sri Vishwesha Tirtha Swamiji, who is associated with? / ஸ்ரீ விஸ்வேஷ தீர்த்த சுவாமிஜியின் பிறந்த நூற்றாண்டு லோகோவை பிரதமர் மோடி வெளியிட்டார், இவர் எந்த மடத்துடன் தொடர்புடையவர்?",
-        o: ["Ramakrishna Math / ராமகிருஷ்ண மடம்", "Sri Pejavara Adhokshaja Matha, Udupi / ஸ்ரீ பேஜாவர அதோக்ஷஜ மடம், உடுப்பி", "Kanchi Kamakoti Peetham / காஞ்சி காமகோடி பீடம்", "Sringeri Sharada Peetham / சிருங்கேரி சாரதா பீடம்"],
-        a: 1, n: "Associated with Sri Pejavara Adhokshaja Matha, Udupi, Karnataka[cite: 12]."
-    },
-    {
-        q: "Arogya Manthan 2026 marks how many years of the Ayushman Bharat Digital Mission (ABDM)? / ஆரோக்கிய மந்தன் 2026 ஆயுஷ்மான் பாரத் டிஜிட்டல் மிஷனின் (ABDM) எத்தனை ஆண்டுகளைக் குறிக்கிறது?",
-        o: ["3 years / 3 ஆண்டுகள்", "5 years / 5 ஆண்டுகள்", "8 years / 8 ஆண்டுகள்", "10 years / 10 ஆண்டுகள்"],
-        a: 1, n: "Marks 8 years of AB PM-JAY & 5 years of ABDM[cite: 13]."
-    },
-    {
-        q: "As of 28 September 2026, how many total sites are in India's UNESCO World Heritage Tentative List? / 28 செப்டம்பர் 2026 நிலவரப்படி, இந்தியாவின் யுனெஸ்கோ உலக மரபு தற்காலிகப் பட்டியலில் மொத்தம் எத்தனை இடங்கள் உள்ளன?",
-        o: ["69 sites", "81 sites", "90 sites", "102 sites"],
-        a: 1, n: "India's Tentative List contained 81 sites (including 12 added during 2026)[cite: 13]."
-    }
+    // Statement Type Questions
+    {qE: "Consider the following statements:\n1. Mukhi is India's first India-born adult cheetah at Kuno National Park.\n2. The Global Biofuel Alliance headquarters will be set up in Brazil.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. முகி என்பது குனோ தேசிய பூங்காவில் பிறந்த இந்தியாவின் முதல் வயது வந்த சிறுத்தை ஆகும்.\n2. உலகளாவிய உயிரி எரிபொருள் கூட்டணியின் தலைமையகம் பிரேசிலில் அமைக்கப்படும்.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 0},
+    {qE: "Consider the following statements:\n1. Indore and Udaipur are the first two Indian cities recognized as Wetland Cities.\n2. The Ken-Betwa river linking project transfers water from the Betwa river to the Ken river.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. இந்தூர் மற்றும் உதய்பூர் ஆகியவை சதுப்புநில நகரங்களாக அங்கீகரிக்கப்பட்ட முதல் இரண்டு இந்திய நகரங்கள்.\n2. கென்-பெட்வா நதி இணைப்புத் திட்டம் பெட்வா நதியிலிருந்து கென் நதிக்கு தண்ணீரை மாற்றுகிறது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 0},
+    {qE: "Consider the following statements:\n1. India is the world's largest emitter of Nitrous Oxide.\n2. The Bald Eagle was recently declared America's National Bird.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. நைட்ரஸ் ஆக்சைடை உலகில் அதிக அளவில் வெளியேற்றும் நாடு இந்தியா.\n2. வழுக்கை கழுகு (Bald Eagle) சமீபத்தில் அமெரிக்காவின் தேசிய பறவையாக அறிவிக்கப்பட்டது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 1},
+    {qE: "Consider the following statements:\n1. Kaziranga Tiger Reserve achieved the 3rd highest tiger density globally.\n2. Durgesh Aranya Zoological Park achieved India's 1st IGBC Certification.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. காசிரங்கா புலிகள் காப்பகம் உலகளவில் 3வது அதிக புலிகள் அடர்த்தியை அடைந்துள்ளது.\n2. துர்கேஷ் ஆரண்ய விலங்கியல் பூங்கா இந்தியாவின் 1 வது IGBC சான்றிதழைப் பெற்றுள்ளது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 2},
+    {qE: "Consider the following statements:\n1. Guru Ghasidas-Tamor Pingla Tiger Reserve is India's 5th largest tiger reserve.\n2. The Banded Royal butterfly was recently discovered in Kerala.", qT: "பின்வரும் கூற்றுகளைக் கவனியுங்கள்:\n1. குரு காசிதாஸ்-தமோர் பிங்லா புலிகள் காப்பகம் இந்தியாவின் 5வது பெரிய புலிகள் காப்பகமாகும்.\n2. பேண்டட் ராயல் பட்டாம்பூச்சி சமீபத்தில் கேரளாவில் கண்டுபிடிக்கப்பட்டது.", oE: ["Only 1", "Only 2", "Both 1 and 2", "Neither 1 nor 2"], oT: ["1 மட்டும்", "2 மட்டும்", "1 மற்றும் 2 இரண்டும்", "1 மற்றும் 2 இரண்டும் இல்லை"], a: 3}
 ];
 
-// --- Quiz State ---
-let questions = [];
-let userAnswers = [];
-let visited = [];
-let timerInterval;
-let timeLeft = 900; // 15 mins
-let currIdx = 0;
+let quizData = [];
+let currentQ = 0;
+let answers = [];
+let status = []; // 0: Not Visited, 1: Not Answered, 2: Answered, 3: Marked, 4: Answered & Marked
 
-function initQuiz() {
-    let cloned = JSON.parse(JSON.stringify(rawData));
-    cloned.forEach(q => {
-        let opts = q.o.map((text, i) => ({ text, isCorrect: i === q.a }));
-        opts.sort(() => Math.random() - 0.5); 
-        q.options = opts;
-    });
-    questions = cloned.sort(() => Math.random() - 0.5);
-    userAnswers = new Array(50).fill(null);
-    visited = new Array(50).fill(false);
+// Shuffle array algorithm
+function shuffleArray(array) {
+    let shuffled = array.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Switch Views
+function switchView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
 }
 
 function startQuiz() {
-    document.getElementById('start-screen').classList.add('hidden');
-    document.getElementById('quiz-container').classList.remove('hidden');
-    initQuiz();
-    renderPalette();
+    quizData = shuffleArray(baseQuizData);
+    answers = new Array(50).fill(null);
+    status = new Array(50).fill(0);
+    
+    switchView('view-quiz');
+    
+    buildPalette();
     loadQuestion(0);
-    timerInterval = setInterval(updateTimer, 1000);
+    startTimer();
+    
+    if(window.innerWidth <= 768) {
+        document.getElementById('close-palette-btn').style.display = 'block';
+    }
 }
 
-function updateTimer() {
-    timeLeft--;
-    let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-    let s = (timeLeft % 60).toString().padStart(2, '0');
-    document.getElementById('timer-display').innerText = `${m}:${s}`;
-    if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        submitQuiz();
+function buildPalette() {
+    const grid = document.getElementById('palette-grid');
+    grid.innerHTML = '';
+    for(let i=0; i<50; i++) {
+        let bubble = document.createElement('div');
+        bubble.className = 'q-bubble status-' + status[i];
+        bubble.innerText = (i+1);
+        bubble.id = 'pb-' + i;
+        bubble.onclick = () => jumpToQuestion(i);
+        grid.appendChild(bubble);
+    }
+}
+
+function syncAnswer() {
+    let selected = document.querySelector('input[name="opt"]:checked');
+    if(selected) {
+        answers[currentQ] = parseInt(selected.value);
+    } else {
+        answers[currentQ] = null;
+    }
+}
+
+function updatePaletteCSS() {
+    for(let i=0; i<50; i++) {
+        let bubble = document.getElementById('pb-' + i);
+        bubble.className = 'q-bubble status-' + status[i];
+        if(i === currentQ) bubble.classList.add('active');
     }
 }
 
 function loadQuestion(index) {
-    currIdx = index;
-    visited[currIdx] = true;
-    let q = questions[currIdx];
+    if(status[currentQ] === 0) {
+        status[currentQ] = (answers[currentQ] !== null) ? 2 : 1;
+    }
     
-    document.getElementById('q-num').innerText = currIdx + 1;
-    document.getElementById('q-text').innerHTML = q.q;
+    currentQ = index;
+    if(status[currentQ] === 0) status[currentQ] = 1;
+
+    document.getElementById('q-no').innerText = "Question " + (currentQ + 1);
     
-    let optHtml = "";
-    q.options.forEach((opt, i) => {
-        let checked = (userAnswers[currIdx] === i) ? "checked" : "";
+    // Format statement questions with line breaks
+    let qTextEn = quizData[currentQ].qE.replace(/\n/g, "<br>");
+    let qTextTa = quizData[currentQ].qT.replace(/\n/g, "<br>");
+    
+    document.getElementById('q-text-en').innerHTML = qTextEn;
+    document.getElementById('q-text-ta').innerHTML = qTextTa;
+
+    let optHtml = '';
+    for(let i=0; i<4; i++) {
+        let checked = (answers[currentQ] === i) ? 'checked' : '';
         optHtml += `
             <label class="option-label">
-                <input type="radio" name="opt" value="${i}" ${checked} onclick="selectOption(${i})">
-                <span>${opt.text}</span>
+                <input type="radio" name="opt" value="${i}" ${checked} onchange="syncAnswer()">
+                <div>
+                    <div>${quizData[currentQ].oE[i]}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">${quizData[currentQ].oT[i]}</div>
+                </div>
             </label>
         `;
-    });
+    }
     document.getElementById('options-container').innerHTML = optHtml;
-    updatePaletteUI();
+    updatePaletteCSS();
 }
 
-function selectOption(optIndex) {
-    userAnswers[currIdx] = optIndex;
-    updatePaletteUI();
-}
-
-function clearResponse() {
-    userAnswers[currIdx] = null;
-    let radios = document.getElementsByName('opt');
-    radios.forEach(r => r.checked = false);
-    updatePaletteUI();
+function jumpToQuestion(i) {
+    syncAnswer();
+    loadQuestion(i);
+    if(window.innerWidth <= 768) togglePalette();
 }
 
 function saveAndNext() {
-    if (currIdx < 49) {
-        loadQuestion(currIdx + 1);
-    }
+    syncAnswer();
+    status[currentQ] = (answers[currentQ] !== null) ? 2 : 1;
+    if(currentQ < 49) loadQuestion(currentQ + 1);
+    else updatePaletteCSS();
+}
+
+function markAndNext() {
+    syncAnswer();
+    status[currentQ] = (answers[currentQ] !== null) ? 4 : 3;
+    if(currentQ < 49) loadQuestion(currentQ + 1);
+    else updatePaletteCSS();
+}
+
+function clearResponse() {
+    answers[currentQ] = null;
+    status[currentQ] = 1;
+    loadQuestion(currentQ);
 }
 
 function prevQuestion() {
-    if (currIdx > 0) {
-        loadQuestion(currIdx - 1);
-    }
-}
-
-function renderPalette() {
-    let html = "";
-    for (let i = 0; i < 50; i++) {
-        html += `<button class="pal-btn" id="pal-btn-${i}" onclick="loadQuestion(${i})">${i + 1}</button>`;
-    }
-    document.getElementById('palette-grid').innerHTML = html;
-}
-
-function updatePaletteUI() {
-    for (let i = 0; i < 50; i++) {
-        let btn = document.getElementById(`pal-btn-${i}`);
-        if (!btn) continue;
-        
-        btn.className = "pal-btn"; 
-        if (i === currIdx) btn.classList.add('active');
-        
-        if (userAnswers[i] !== null) {
-            btn.classList.add('status-answered');
-        } else if (visited[i]) {
-            btn.classList.add('status-unanswered');
-        } else {
-            btn.classList.add('status-unvisited');
-        }
-    }
+    syncAnswer();
+    if(currentQ > 0) loadQuestion(currentQ - 1);
 }
 
 function togglePalette() {
-    let grid = document.getElementById('palette-grid');
-    grid.style.display = (grid.style.display === 'none') ? 'grid' : 'none';
+    document.getElementById('palette').classList.toggle('open');
 }
 
-// Google Sites friendly custom modal logic replacing browser alert/confirm
-function showSubmitModal() {
-    document.getElementById('custom-modal').classList.remove('hidden');
+// Timer Logic
+let timeLimit = 15 * 60; // 15 mins
+let timerInterval;
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timeLimit--;
+        let m = Math.floor(timeLimit / 60).toString().padStart(2, '0');
+        let s = (timeLimit % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = m + ':' + s;
+        if(timeLimit <= 0) {
+            clearInterval(timerInterval);
+            submitExam();
+        }
+    }, 1000);
 }
 
-function closeModal() {
-    document.getElementById('custom-modal').classList.add('hidden');
+// Custom Submit Modals
+function showSubmitConfirm() {
+    syncAnswer();
+    let unattempted = answers.filter(a => a === null).length;
+    let warningTxt = document.getElementById('unanswered-warning');
+    if(unattempted > 0) {
+        warningTxt.innerText = `You have ${unattempted} unattempted questions!`;
+        warningTxt.style.display = 'block';
+    } else {
+        warningTxt.style.display = 'none';
+    }
+    document.getElementById('confirm-modal').style.display = 'flex';
 }
 
-function submitQuiz() {
-    closeModal();
+function closeSubmitConfirm() {
+    document.getElementById('confirm-modal').style.display = 'none';
+}
+
+function submitExam() {
     clearInterval(timerInterval);
-    document.getElementById('quiz-container').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
+    document.getElementById('confirm-modal').style.display = 'none';
+    syncAnswer();
     
     let correct = 0, wrong = 0, unattempted = 0;
-    let wrongHtml = "";
-    let unattemptedHtml = "";
     
-    questions.forEach((q, idx) => {
-        let userAnsIdx = userAnswers[idx];
-        let correctOpt = q.options.find(o => o.isCorrect);
-        
-        if (userAnsIdx === null) {
-            unattempted++;
-            unattemptedHtml += buildReviewItem(idx + 1, q, "Not Attempted", correctOpt.text, q.n, true);
-        } else {
-            let isCorrect = q.options[userAnsIdx].isCorrect;
-            if (isCorrect) {
-                correct++;
-            } else {
-                wrong++;
-                wrongHtml += buildReviewItem(idx + 1, q, q.options[userAnsIdx].text, correctOpt.text, q.n, false);
-            }
-        }
+    quizData.forEach((q, i) => {
+        if(answers[i] === null) unattempted++;
+        else if(answers[i] === q.a) correct++;
+        else wrong++;
     });
     
-    document.getElementById('score-attempted').innerText = correct + wrong;
-    document.getElementById('score-correct').innerText = correct;
-    document.getElementById('score-wrong').innerText = wrong;
-    document.getElementById('score-unattempted').innerText = unattempted;
+    let score = correct - (wrong * 0.3333);
     
-    document.getElementById('review-wrong').innerHTML = wrongHtml || "<p>No incorrect answers! Great job.</p>";
-    document.getElementById('review-unattempted').innerHTML = unattemptedHtml || "<p>All questions attempted.</p>";
-}
-
-function buildReviewItem(num, qObj, userTxt, correctTxt, note, isUnattempted) {
-    let cls = isUnattempted ? "review-item unattempted" : "review-item";
-    return `
-        <div class="${cls}">
-            <p><b>Q${num}:</b> ${qObj.q}</p>
-            <p class="user-ans">Your Answer: ${userTxt}</p>
-            <p class="correct-ans">Correct Answer: ${correctTxt}</p>
-            <div class="exam-note"><b>Note:</b> ${note}</div>
-        </div>
-    `;
-}
-
-function showReviewTab(tab) {
-    document.getElementById('btn-tab-wrong').classList.remove('active');
-    document.getElementById('btn-tab-unattempted').classList.remove('active');
-    document.getElementById('review-wrong').classList.add('hidden');
-    document.getElementById('review-unattempted').classList.add('hidden');
+    document.getElementById('res-score').innerText = score.toFixed(2);
+    document.getElementById('res-correct').innerText = correct;
+    document.getElementById('res-wrong').innerText = wrong;
+    document.getElementById('res-unattempted').innerText = unattempted;
     
-    document.getElementById(`btn-tab-${tab}`).classList.add('active');
-    document.getElementById(`review-${tab}`).classList.remove('hidden');
+    switchView('view-results');
 }
 
+function showDetailedReview() {
+    let reviewHtml = '';
+    quizData.forEach((q, i) => {
+        let isAttempted = answers[i] !== null;
+        let isCorrect = isAttempted && answers[i] === q.a;
+        let cssClass = !isAttempted ? 'unattempted' : (isCorrect ? 'correct' : 'wrong');
+        
+        let chosenText = isAttempted ? q.oE[answers[i]] : "None";
+        let correctText = q.oE[q.a];
+        
+        let qText = q.qE.replace(/\n/g, "<br>");
+        let tagHtml = !isAttempted ? `<span class="answer-tag tag-unattempted">Unattempted</span>` : 
+                      isCorrect ? `<span class="answer-tag tag-correct">Correct</span>` : 
+                      `<span class="answer-tag tag-wrong">Incorrect (-0.33)</span>`;
+        
+        reviewHtml += `
+            <div class="review-item ${cssClass}">
+                <strong>Q${i+1}: ${qText}</strong><br>
+                ${tagHtml}
+                <div style="margin-top: 15px; font-size: 0.95rem; display: grid; gap: 8px;">
+                    <div><span style="color: var(--text-secondary)">Your Answer:</span> <span style="color: ${!isAttempted ? '#9e9e9e' : isCorrect ? 'var(--color-answered)' : 'var(--color-not-answered)'}">${chosenText}</span></div>
+                    <div><span style="color: var(--text-secondary)">Correct Answer:</span> <span style="color: var(--color-answered); font-weight: bold;">${correctText}</span></div>
+                </div>
+            </div>
+        `;
+    });
+    document.getElementById('review-list').innerHTML = reviewHtml;
+    document.getElementById('review-list').style.display = 'block';
+    
+    // Hide the review button itself so they don't click it twice
+    event.target.style.display = 'none';
+}
 </script>
 </body>
 </html>
